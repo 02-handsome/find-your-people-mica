@@ -287,3 +287,85 @@ above, not a silently amended criterion.
 If it is ever revised, the sensible target is **fewer than 12**, which keeps the
 intent — onboarding short enough that nobody abandons it — without asking for
 fewer actions than there are required fields.
+
+---
+
+## AD-9 — The tag vocabulary mixes activities with unrelated interests, on purpose.
+
+**Decision.** Six activity-adjacent tags (Gym, Running, Football, Cricket,
+Badminton, Trekking) plus eight that have nothing to do with training
+(Marketing, Finance, Consulting, F1, Anime, Coffee, Startups, Films).
+
+**Reasoning.** F3 scores candidates as:
+
+```
+score = (shared_days × 3) + (experience_level match ? 2 : 0)
+      + (overlapping_tags × 2) + (time_overlap_minutes / 30)
+```
+
+`activity` is a **hard filter** (F3.1) — every candidate being scored has
+already matched on it. So a tag list made only of activities would make
+`overlapping_tags` largely restate that filter: two gym-goers both tagging "Gym"
+score +2 for a fact already established, which inflates all scores roughly
+equally and discriminates between nobody. A term that moves every score by the
+same amount does no ranking work.
+
+The interest tags restore the independence the formula assumes. Availability
+(days, times) decides *who could*; interests decide *who you would actually want
+to*. That is the difference between a partner you meet twice and one you keep.
+
+**Consequence for Phase 3.** The seed script must spread interest tags widely
+rather than clustering them, or `overlapping_tags` collapses back to noise and
+ranking is driven by `shared_days` alone.
+
+---
+
+## AD-10 — A column-level GRANT cannot narrow a table-wide one. Found by testing.
+
+**The bug.** The first version of `0001_users.sql` contained:
+
+```sql
+revoke all on public.users from anon;
+grant select on public.users to authenticated;
+grant update (name, year, tags, contact_handle) on public.users to authenticated;
+```
+
+The intent was that an authenticated user could edit only those four profile
+columns — so `email` would be immutable and nobody could escape the F1.2 domain
+gate after signing up.
+
+**It did nothing.** A live test signed in as a normal user and successfully ran:
+
+```
+PATCH /rest/v1/users?id=eq.<own id>   {"email": "escalate@gmail.com"}
+→ 200, email changed
+```
+
+**Why.** Supabase's default privileges already grant `ALL` on tables in `public`
+to `authenticated`. A column-level `GRANT` only ever **adds** privileges — it
+cannot narrow a table-wide grant that already exists. I revoked from `anon` but
+never from `authenticated`, so the column list was decorative. The fix is one
+line, and it has to come *first*:
+
+```sql
+revoke update on public.users from authenticated;
+grant update (name, year, tags, contact_handle) on public.users to authenticated;
+```
+
+**The general lesson, which is the reason this is written down.** This is the
+same failure mode as AD-5: a control that *looks* like enforcement but isn't. In
+AD-5 it was a domain check in TypeScript that a direct API call walks straight
+past. Here it was a column grant that Postgres silently treated as a no-op.
+Neither produced an error. Neither would have been caught by reading the code —
+only by attempting the attack.
+
+**So a trigger now enforces it too.** `prevent_identity_change()` rejects any
+UPDATE that alters `id`, `email` or `created_at`. Grants are configuration and
+easy to get subtly wrong; the trigger holds regardless of which role is
+connected or what it was granted. Two independent mechanisms for one invariant,
+because the first one already failed once.
+
+**Practice worth keeping:** for every rule of the form "user X must not be able
+to do Y", write the test that *attempts* Y. The passing tests in this phase
+(RLS blocking cross-user reads, the campus domain gate) only mean something
+because the same test method caught a real hole in the third case.

@@ -51,6 +51,9 @@ export function AuthForm({
           autoComplete="email"
           autoCapitalize="none"
           spellCheck={false}
+          // Re-filled after a failed submit; React 19 resets uncontrolled
+          // fields once the action completes.
+          defaultValue={state.email ?? ""}
           placeholder="you@micamail.in"
           className={INPUT}
         />

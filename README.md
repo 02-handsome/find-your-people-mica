@@ -6,9 +6,13 @@ thing. Contact details are revealed only after both sides agree.
 
 **Live URL:** https://find-your-people-mica.vercel.app
 
-**Build status:** Phase 1 of 8 complete — repo, database connection, deployed
-hello-world. Public URL loads over HTTPS, and the daily Supabase keep-alive has
-run green. See `docs/PRD.md` section 9 for the full build sequence.
+**Build status:** Phase 2 of 8 complete — auth, campus email validation and
+profile setup. An account can be created and logged back into. See
+`docs/PRD.md` section 9 for the full build sequence.
+
+> Opening the live URL redirects to `/login`. That is required behaviour, not a
+> fault: PRD F1.6 makes every route except login/signup private. See
+> `docs/notes.md` AD-7.
 
 ---
 
@@ -133,9 +137,33 @@ cost of a public repo, recorded here rather than left as a surprise.
 
 ## Test accounts
 
-_TODO (Phase 2–3): PRD requirement S5 wants two working test accounts documented
-here and shown on the login screen. Blocked until auth and the seed script
-exist._
+Both are live, have completed profiles, and are also displayed on the login
+screen so no setup is needed (PRD S5).
+
+| Email | Password |
+| --- | --- |
+| `test.one@micamail.in` | `FindYourPeople#2026` |
+| `test.two@micamail.in` | `FindYourPeople#2026` |
+
+These are throwaway accounts on a demo database with Row Level Security
+enabled — signing in as one grants access to that account's own row and nothing
+else. Defined in `lib/test-accounts.ts`.
+
+_Phase 3 will add the 25–30 seeded users and their active intents (PRD F5)._
+
+## Signing up
+
+Only `@micamail.in` and `@mica.ac.in` addresses can create an account (PRD
+F1.2). The allowlist lives in **one** place — the
+`public.allowed_email_domains()` function in
+`supabase/migrations/0001_users.sql`. Add a domain there and re-run that
+function; no application code changes, and the notice on the login screen
+updates itself because it reads the same function.
+
+This is enforced by a trigger on `auth.users`, not in application code. The
+publishable key is public by design, so anyone can call Supabase's signup
+endpoint directly — an application-layer check would be decorative. See
+`docs/notes.md` AD-5.
 
 ---
 

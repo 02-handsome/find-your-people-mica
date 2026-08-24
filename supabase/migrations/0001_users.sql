@@ -105,14 +105,24 @@ create policy users_update_own on public.users
 
 
 -- ---------------------------------------------------------------------------
---  Privileges. RLS filters rows; grants decide which columns are reachable.
+--  Privileges. RLS filters rows; grants decide which COLUMNS are reachable.
 -- ---------------------------------------------------------------------------
 revoke all on public.users from anon;
-grant select on public.users to authenticated;
 
--- Column-scoped UPDATE. This is what stops a user who signed up on an allowed
--- domain from later rewriting their own `email` to something off-domain, and
--- keeps `id` / `created_at` immutable.
+-- The revoke below is load-bearing and MUST come before the column grant.
+--
+-- Supabase's default privileges already grant ALL on tables in `public` to
+-- `authenticated`. A column-level GRANT only ADDS privileges — it cannot narrow
+-- a table-wide grant that already exists. Without this line, the column list
+-- below is decorative: an authenticated user can PATCH their own `email` and
+-- escape the F1.2 domain gate after signing up.
+--
+-- This was found by testing, not by reading — the first version of this file
+-- had the column grant without the revoke and the escalation succeeded. See
+-- docs/notes.md AD-10.
+revoke update on public.users from authenticated;
+
+grant select on public.users to authenticated;
 grant update (name, year, tags, contact_handle) on public.users to authenticated;
 
 
@@ -177,8 +187,54 @@ create trigger create_profile_for_new_user
 
 
 -- ===========================================================================
+--  Trigger 3 — identity columns are immutable after the row is created.
+--
+--  Defence in depth for the grant above, and deliberately not reliant on it.
+--  Privilege configuration is easy to get subtly wrong — this file shipped
+--  exactly such a mistake once — whereas a trigger holds regardless of which
+--  role is connected or what it was granted.
+--
+--  Note: this is strict on purpose. Correcting an email by hand means dropping
+--  the trigger, changing the row, and recreating it. That is the intended cost;
+--  `email` is set from auth.users at signup and should never drift from it.
+-- ===========================================================================
+create or replace function public.prevent_identity_change()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.id is distinct from old.id then
+    raise exception 'ID_IMMUTABLE: users.id cannot be changed'
+      using errcode = 'check_violation';
+  end if;
+  if new.email is distinct from old.email then
+    raise exception 'EMAIL_IMMUTABLE: users.email is set at signup and cannot be changed'
+      using errcode = 'check_violation';
+  end if;
+  if new.created_at is distinct from old.created_at then
+    raise exception 'CREATED_AT_IMMUTABLE: users.created_at cannot be changed'
+      using errcode = 'check_violation';
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists prevent_identity_change on public.users;
+create trigger prevent_identity_change
+  before update on public.users
+  for each row execute function public.prevent_identity_change();
+
+
+-- ===========================================================================
 --  Verify
 -- ===========================================================================
 --   select public.allowed_email_domains();               -- {micamail.in,mica.ac.in}
 --   select public.is_email_allowed('a@micamail.in');     -- true
 --   select public.is_email_allowed('a@gmail.com');       -- false
+--
+-- Confirm the update privilege is actually narrowed (expect only the four
+-- profile columns, NOT email / id / created_at):
+--   select column_name from information_schema.column_privileges
+--    where table_name = 'users' and privilege_type = 'UPDATE' and grantee = 'authenticated'
+--    order by column_name;

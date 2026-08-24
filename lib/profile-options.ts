@@ -8,21 +8,41 @@
 
 export const YEARS = ["PGP 1", "PGP 2", "PhD", "Faculty"] as const;
 
+/**
+ * Two kinds of tag, deliberately mixed.
+ *
+ * F3's scoring formula is:
+ *
+ *   score = (shared_days × 3) + (experience_level match ? 2 : 0)
+ *         + (overlapping_tags × 2) + (time_overlap_minutes / 30)
+ *
+ * `activity` is already a hard filter (F3.1) — every candidate in the pool
+ * matched on it before scoring begins. So a vocabulary made only of activities
+ * would make `overlapping_tags` largely re-measure a fact the filter has
+ * already settled: two gym-goers would score +2 for both tagging "Gym", which
+ * is not new information and inflates every score equally.
+ *
+ * The interest tags below are what make that term an independent signal. They
+ * are what separates two equally available gym partners.
+ */
 export const TAGS = [
-  "Cricket",
-  "Football",
-  "Badminton",
-  "Tennis",
-  "Running",
+  // Activity-adjacent — still useful, since the intent's `activity` is one
+  // choice while these show what else someone plays.
   "Gym",
-  "Swimming",
-  "Yoga",
-  "Cycling",
-  "Basketball",
-  "Table Tennis",
+  "Running",
+  "Football",
+  "Cricket",
+  "Badminton",
   "Trekking",
-  "Music",
-  "Photography",
+  // Independent of any activity. These carry the real discriminating power.
+  "Marketing",
+  "Finance",
+  "Consulting",
+  "F1",
+  "Anime",
+  "Coffee",
+  "Startups",
+  "Films",
 ] as const;
 
 /** PRD 4.1: "Exactly 3, from a fixed list." */

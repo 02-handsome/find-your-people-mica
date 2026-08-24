@@ -6,14 +6,24 @@ import { saveProfileAction } from "@/app/(app)/profile-setup/actions";
 import { FormError } from "@/components/FormError";
 import { SubmitButton } from "@/components/SubmitButton";
 import { TagPicker } from "@/components/TagPicker";
+import { YearPicker } from "@/components/YearPicker";
 import { HINT, INPUT, LABEL } from "@/components/ui";
-import { TAGS_REQUIRED, YEARS, type Profile } from "@/lib/profile-options";
+import { TAGS_REQUIRED, type Profile } from "@/lib/profile-options";
 
-/** Screen 2 (PRD section 7): name, year, tag picker (3), contact handle. */
+/**
+ * Screen 2 (PRD section 7): name, year, tag picker (3), contact handle.
+ *
+ * Nothing the user typed is lost when server validation rejects one field.
+ * React 19 resets uncontrolled fields after a form action completes, so the
+ * text inputs read `state.values` (echoed back by the action) before falling
+ * back to the stored profile, and the two pickers hold their own state.
+ */
 export function ProfileSetupForm({ profile }: { profile: Profile }) {
   const [state, formAction] = useActionState(saveProfileAction, {
     error: null,
   });
+
+  const submitted = state.values;
 
   return (
     <form action={formAction} className="mt-6 space-y-6">
@@ -28,7 +38,7 @@ export function ProfileSetupForm({ profile }: { profile: Profile }) {
           name="name"
           type="text"
           required
-          defaultValue={profile.name ?? ""}
+          defaultValue={submitted?.name ?? profile.name ?? ""}
           autoComplete="name"
           autoCapitalize="words"
           placeholder="As people would know you"
@@ -37,32 +47,15 @@ export function ProfileSetupForm({ profile }: { profile: Profile }) {
       </div>
 
       <div>
-        <label className={LABEL} htmlFor="year">
-          Year
-        </label>
-        {/* Native <select> on purpose — it opens the OS picker on mobile, which
-            beats any custom dropdown at 375px. */}
-        <select
-          id="year"
-          name="year"
-          required
-          defaultValue={profile.year ?? ""}
-          className={INPUT}
-        >
-          <option value="" disabled>
-            Choose your year
-          </option>
-          {YEARS.map((year) => (
-            <option key={year} value={year}>
-              {year}
-            </option>
-          ))}
-        </select>
+        <span className={LABEL}>Year</span>
+        <YearPicker initial={submitted?.year ?? profile.year ?? ""} />
       </div>
 
       <div>
-        <span className={LABEL}>Pick {TAGS_REQUIRED} things you&rsquo;re into</span>
-        <TagPicker initial={profile.tags ?? []} />
+        <span className={LABEL}>
+          Pick {TAGS_REQUIRED} things you&rsquo;re into
+        </span>
+        <TagPicker initial={submitted?.tags ?? profile.tags ?? []} />
       </div>
 
       <div>
@@ -74,7 +67,9 @@ export function ProfileSetupForm({ profile }: { profile: Profile }) {
           name="contact_handle"
           type="tel"
           required
-          defaultValue={profile.contact_handle ?? ""}
+          defaultValue={
+            submitted?.contactHandle ?? profile.contact_handle ?? ""
+          }
           inputMode="numeric"
           autoComplete="tel"
           placeholder="10-digit mobile number"

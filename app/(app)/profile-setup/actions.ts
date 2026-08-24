@@ -13,7 +13,23 @@ import {
 } from "@/lib/profile-options";
 import { createClient } from "@/lib/supabase/server";
 
-export type ProfileFormState = { error: string | null };
+export type ProfileFormState = {
+  error: string | null;
+  /**
+   * The values the user submitted, echoed back so the form can re-fill itself.
+   *
+   * React 19 resets uncontrolled fields once a form action completes, so
+   * without this a single mistyped digit in the phone number would clear the
+   * name and year the user had already typed — on a mobile keyboard, the
+   * fastest way to make someone abandon onboarding.
+   */
+  values?: {
+    name: string;
+    year: string;
+    tags: string[];
+    contactHandle: string;
+  };
+};
 
 /** PRD F1.3 — complete the profile: name, year, 3 tags, contact handle. */
 export async function saveProfileAction(
@@ -28,20 +44,24 @@ export async function saveProfileAction(
   const tags = formData.getAll("tags").map((value) => String(value));
   const contactRaw = String(formData.get("contact_handle") ?? "");
 
+  // Returned with every failure so nothing the user typed is lost.
+  const values = { name, year, tags, contactHandle: contactRaw };
+
   // Validated here, on the server, not just in the browser. The client-side
   // limits in TagPicker are for feedback; these are the rules.
   if (name.length < 2) {
-    return { error: "Please enter your name." };
+    return { error: "Please enter your name.", values };
   }
   if (!isValidYear(year)) {
-    return { error: "Please choose your year." };
+    return { error: "Please choose your year.", values };
   }
   if (!areValidTags(tags)) {
-    return { error: `Pick exactly ${TAGS_REQUIRED} tags from the list.` };
+    return { error: `Pick exactly ${TAGS_REQUIRED} tags from the list.`, values };
   }
   if (!isValidContactHandle(contactRaw)) {
     return {
       error: "Enter a valid 10-digit mobile number so matches can reach you.",
+      values,
     };
   }
 
@@ -61,7 +81,7 @@ export async function saveProfileAction(
     .eq("id", userId);
 
   if (error) {
-    return { error: "Could not save your profile. Please try again." };
+    return { error: "Could not save your profile. Please try again.", values };
   }
 
   // (complete)/layout.tsx reads the profile to decide whether to bounce the
