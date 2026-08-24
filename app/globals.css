@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  /* No font-family here on purpose. The scaffold hardcoded Arial, which
+     overrode the Geist font loaded in layout.tsx and made the webfont dead
+     weight. Setting `var(--font-sans)` instead does not work either: `@theme
+     inline` above tells Tailwind to inline theme values into utilities rather
+     than emit them as CSS variables, so `--font-sans` does not exist at
+     runtime — and an unresolved var() with no fallback invalidates the whole
+     declaration. The font is applied with the `font-sans` utility on <body>
+     in layout.tsx, which Tailwind expands to var(--font-geist-sans). */
+}

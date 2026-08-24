@@ -1,0 +1,11 @@
+# Normalise line endings in the repository to LF regardless of each developer's
+# core.autocrlf setting. This repo is authored on Windows but built on Linux
+# (Vercel, GitHub Actions runners), and a CRLF-terminated shell script inside a
+# workflow fails with confusing `\r: command not found` errors.
+* text=auto eol=lf
+
+# Binary — never touch.
+*.ico binary
+*.png binary
+*.jpg binary
+*.woff2 binary
