@@ -4,10 +4,11 @@ A verified campus app where students post what activity they're looking for a
 partner for, and get matched with a small number of people who posted the same
 thing. Contact details are revealed only after both sides agree.
 
-**Live URL:** _pending first deploy — paste the Vercel URL here_
+**Live URL:** https://find-your-people-mica.vercel.app
 
-**Build status:** Phase 1 of 8 complete (repo, database connection, deployed
-hello-world). See `docs/PRD.md` section 9 for the full build sequence.
+**Build status:** Phase 1 of 8 complete — repo, database connection, deployed
+hello-world. Public URL loads over HTTPS, and the daily Supabase keep-alive has
+run green. See `docs/PRD.md` section 9 for the full build sequence.
 
 ---
 
