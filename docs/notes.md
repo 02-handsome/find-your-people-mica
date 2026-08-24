@@ -369,3 +369,47 @@ because the first one already failed once.
 to do Y", write the test that *attempts* Y. The passing tests in this phase
 (RLS blocking cross-user reads, the campus domain gate) only mean something
 because the same test method caught a real hole in the third case.
+
+---
+
+## AD-11 — Profile editing is in scope, beyond F1.3. A wrong contact handle is unrecoverable otherwise.
+
+**Decision.** `/profile-setup` stays reachable after the profile is complete. It
+prefills from the stored row, saves changes, and is linked from the home screen
+as "Edit profile". F1.3 describes onboarding only — this is a deliberate
+addition to that scope, not an accident of the routing.
+
+**Reasoning — this is a correctness issue, not a convenience.**
+
+`contact_handle` is the entire payload of the product. F4.5 reveals it to the
+other party the moment a request is accepted, and that is the only thing the
+reveal delivers. A typo in it therefore means:
+
+- The reveal hands out a **wrong number**, permanently, to every match.
+- The failure is **silent on both sides**. The sender thinks the connection
+  worked. The recipient texts a stranger, or nothing. Neither can tell whether
+  the other person is ignoring them or the number was simply wrong.
+- There is **no recovery path**. Without editing, the only fix is a second
+  account — which the campus domain gate makes hard on purpose, and which would
+  orphan every existing accepted request.
+
+So a read-only profile does not merely inconvenience someone who mistypes; it
+breaks the product's single promise in the one way nobody can diagnose. That is
+worth more than strict adherence to a phase boundary.
+
+**Consistent with the PRD's own instincts.** F2.4 already establishes that a
+posted intent must be editable (days, time window, level) without resetting its
+expiry. Making the thing a user posts correctable is a principle the spec
+applies elsewhere; F1.3 just does not say it about the profile.
+
+**Cost.** Close to nothing. The page, the form, the prefill and the validation
+already existed for onboarding; this adds a link on the home screen and swaps
+two labels ("Edit your profile", "Save changes"). No new route, no new action, no
+new query. There is no redirect loop because the completeness guard lives one
+level down, in `(complete)/layout.tsx`.
+
+**What is deliberately still NOT editable:** `email`, `id` and `created_at`,
+enforced by both the column grant and the `prevent_identity_change` trigger
+(AD-10). The distinction is the point — **identity is fixed, contact details are
+not**. Letting someone rewrite their email would walk straight out of the campus
+domain gate; letting them fix a phone number is the product working.

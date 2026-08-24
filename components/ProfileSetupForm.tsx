@@ -18,7 +18,13 @@ import { TAGS_REQUIRED, type Profile } from "@/lib/profile-options";
  * text inputs read `state.values` (echoed back by the action) before falling
  * back to the stored profile, and the two pickers hold their own state.
  */
-export function ProfileSetupForm({ profile }: { profile: Profile }) {
+export function ProfileSetupForm({
+  profile,
+  editing = false,
+}: {
+  profile: Profile;
+  editing?: boolean;
+}) {
   const [state, formAction] = useActionState(saveProfileAction, {
     error: null,
   });
@@ -82,7 +88,9 @@ export function ProfileSetupForm({ profile }: { profile: Profile }) {
         </p>
       </div>
 
-      <SubmitButton pendingLabel="Saving…">Save and continue</SubmitButton>
+      <SubmitButton pendingLabel="Saving…">
+        {editing ? "Save changes" : "Save and continue"}
+      </SubmitButton>
     </form>
   );
 }

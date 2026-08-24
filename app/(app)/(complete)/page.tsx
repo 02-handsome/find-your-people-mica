@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { signOutAction } from "@/app/(app)/actions";
 import { Avatar } from "@/components/Avatar";
@@ -53,14 +54,27 @@ export default async function HomePage() {
         </p>
       </section>
 
-      <form action={signOutAction} className="mt-8">
-        <button
-          type="submit"
+      {/* Editing has to be reachable, not just permitted. A wrong
+          contact_handle would otherwise be revealed to every accepted match
+          forever, and neither side could tell why the number does not work.
+          See docs/notes.md AD-11. */}
+      <div className="mt-8 flex items-center gap-5">
+        <Link
+          href="/profile-setup"
           className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
         >
-          Log out
-        </button>
-      </form>
+          Edit profile
+        </Link>
+
+        <form action={signOutAction}>
+          <button
+            type="submit"
+            className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+          >
+            Log out
+          </button>
+        </form>
+      </div>
     </main>
   );
 }
