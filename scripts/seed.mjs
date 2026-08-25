@@ -333,6 +333,14 @@ async function main() {
 
     // Replace rather than update: keeps the run idempotent and avoids fighting
     // the one-active-intent unique index.
+    //
+    // Predicate-scoped, and deliberate: this script DECLARES OWNERSHIP of the
+    // 32 identities in ALL, and its documented contract is to reset them to the
+    // state in the README. That includes an intent a human posted through the UI
+    // on test.one or test.two — re-seeding is a reset, not a merge.
+    //
+    // Note what it therefore never touches: any account not in this list. Real
+    // signups keep their intents. See docs/notes.md AD-25.
     const { error: delError } = await admin.from("intents").delete().eq("user_id", id);
     if (delError) fail(`clear intents ${f.email}: ${delError.message}`);
 

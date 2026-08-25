@@ -926,7 +926,63 @@ is not zero, and it is why none of them accepts a `user_id` for the caller.
 
 ---
 
-# Open questions
+## AD-25 — Test scripts delete only rows they created. Enforced, not remembered.
+
+**The rule.** No script may issue a bare delete on a table, and no script may
+delete by a predicate that could match a row it did not create.
+
+**How it came up.** Not from a script — from me. Cleaning up after the Phase 6
+browser walkthrough I ran, at a shell prompt:
+
+```js
+await admin.from('requests').delete().neq('id','00000000-...')
+```
+
+That is a bare delete wearing a `where` clause. It happened to remove exactly
+the one row my own test had created, so nothing was lost. Had a real user held a
+pending request at that moment, it would have gone, silently, and the next
+`verify` run would have looked perfectly healthy.
+
+**The audit that followed found one real instance in committed code.**
+`verify-matches.mjs` cleaned up with:
+
+```js
+delete().eq("from_user_id", one.id).eq("to_user_id", target.user_id)
+```
+
+That reads as scoped and is not. It targets **real seeded users**. A *pending* or
+*accepted* request cannot pre-exist for that pair — F3.1 would have kept the
+target out of the pool — but a **declined** one can, and F4.6 deliberately leaves
+exactly those behind. The script would have deleted someone's real history as a
+side effect of testing.
+
+**The fix is structural**, matching how every other invariant in this project is
+held. `scripts/lib/tracked-writes.mjs` hands out primary keys on insert and
+`cleanup()` iterates only those:
+
+```js
+const tracked = trackedWrites(admin);
+const id = await tracked.insert("requests", { … });
+await tracked.cleanup();   // deletes by primary key, nothing else
+```
+
+There is no way to express "delete everything in requests" through it. A check
+now asserts the cleanup removed exactly the expected count, so a silent
+over-delete would fail the suite rather than pass it.
+
+**When a predicate-scoped delete IS legitimate** — the distinction matters, and
+both remaining cases are annotated in place:
+
+| Case | Why it is safe |
+| --- | --- |
+| `eq("user_id", probe.id)` in `verify-constraints` | the probe was created by this script seconds earlier and is deleted at the end, so every matching row is script-created **by construction** |
+| `eq("user_id", id)` in `seed.mjs` | the seed **declares ownership** of its 32 identities and its documented contract is to reset them. It never matches an account outside that list, so real signups keep their data |
+
+**The general lesson.** "Scoped" is not a property of having a `where` clause —
+it is a property of the predicate only being able to match rows you own. The
+difference is invisible in the code and shows up as missing data much later, in
+whatever the test happened to run beside. And test cleanup is the worst place
+for it, because a destructive bug there is *reported as a pass*.
 
 Decisions deliberately deferred, recorded so the phase that owns them decides
 on purpose rather than inheriting whatever happened by accident.

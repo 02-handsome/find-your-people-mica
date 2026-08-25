@@ -21,6 +21,7 @@ import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
 import { EMPTY_POOL_COPY, RELAXED_LABEL } from "../lib/matches.ts";
+import { trackedWrites } from "./lib/tracked-writes.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -256,8 +257,21 @@ async function main() {
   const target = before[0];
   console.log(`  top match before: ${target.name}`);
 
+  // This section is the only place any verification script writes rows against
+  // REAL seeded users rather than throwaway probes, so cleanup goes through
+  // trackedWrites: it deletes by the primary keys it was handed and cannot
+  // express anything broader.
+  //
+  // The predicate-scoped version this replaced —
+  //   delete().eq("from_user_id", one.id).eq("to_user_id", target.user_id)
+  // — reads as scoped and is not. A pending or accepted request cannot pre-exist
+  // for this pair (F3.1 would have kept `target` out of the pool), but a
+  // DECLINED one can, and F4.6 deliberately leaves exactly those behind. That
+  // delete would have taken someone's real history with it.
+  const tracked = trackedWrites(admin);
+
   // Direction 1: viewer -> candidate.
-  await admin.from("requests").insert({
+  const outgoingId = await tracked.insert("requests", {
     from_user_id: one.id, to_user_id: target.user_id, intent_id: oneIntent.id,
   });
   const afterOut = (await oneClient.rpc("get_matches")).data;
@@ -266,12 +280,15 @@ async function main() {
     !afterOut.some((r) => r.user_id === target.user_id),
     `${target.name} ${afterOut.some((r) => r.user_id === target.user_id) ? "still present" : "gone"}`
   );
-  await admin.from("requests").delete().eq("from_user_id", one.id).eq("to_user_id", target.user_id);
 
   // Direction 2: candidate -> viewer. The unique index is directional, so only
-  // the query's bidirectional check can catch this one.
+  // the query's bidirectional check can catch this one. The outgoing row has to
+  // go first, or F3.1 cannot distinguish which direction did the excluding.
+  await admin.from("requests").delete().eq("id", outgoingId);
+  tracked.forget(outgoingId);
+
   const targetIntent = intents.find((i) => i.user_id === target.user_id && i.status === "active");
-  await admin.from("requests").insert({
+  await tracked.insert("requests", {
     from_user_id: target.user_id, to_user_id: one.id, intent_id: targetIntent.id,
   });
   const afterIn = (await oneClient.rpc("get_matches")).data;
@@ -280,7 +297,10 @@ async function main() {
     !afterIn.some((r) => r.user_id === target.user_id),
     `${target.name} ${afterIn.some((r) => r.user_id === target.user_id) ? "still present" : "gone"}`
   );
-  await admin.from("requests").delete().eq("from_user_id", target.user_id).eq("to_user_id", one.id);
+
+  const removed = await tracked.cleanup();
+  check("cleanup removed exactly the rows this script created", removed === 1,
+    `${removed} row(s) deleted by primary key`);
 
   const restored = (await oneClient.rpc("get_matches")).data;
   check("pool restored after deleting the requests", restored.length === before.length,

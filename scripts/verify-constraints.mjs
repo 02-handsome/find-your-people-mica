@@ -241,6 +241,12 @@ async function main() {
   console.log("\n════ requests ════\n");
 
   // A needs a live intent again to send from — its own was withdrawn above.
+  //
+  // Predicate-scoped delete, and safe: A is a throwaway probe this script
+  // created moments ago and deletes at the end, so every intent matching
+  // user_id = A.id is script-created by construction. Contrast the rule in
+  // scripts/lib/tracked-writes.mjs — the same shape aimed at a REAL user would
+  // not be safe, which is why verify-matches uses tracked writes instead.
   await admin.from("intents").delete().eq("user_id", A.id);
   await A.client.from("intents").insert({ user_id: A.id, ...baseIntent });
   const { data: aFresh } = await A.client.from("intents").select("id").eq("user_id", A.id);
