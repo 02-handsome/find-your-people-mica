@@ -666,6 +666,68 @@ budget.
 
 ---
 
+## AD-19 — F3 weights availability above compatibility. Deliberately.
+
+**The observation.** In F3's formula, one extra shared day (3 points) outranks a
+matching experience level (2 points). Two people with nothing in common but a
+five-day overlap beat a same-level partner who is free three days.
+
+That looks like a mis-weighting. It is the intended shape.
+
+```
+score = (shared_days × 3)                   →  3 – 21   availability
+      + (time_overlap_minutes / 30)         →  ~2 – 6   availability
+      + (overlapping_tags × 2)              →   0 – 6   compatibility
+      + (experience_level match ? 2 : 0)    →   0 – 2   compatibility
+```
+
+Availability can contribute roughly **5–27** points, compatibility **0–8**. The
+formula is about three times more interested in whether you can actually meet
+than in whether you will get along.
+
+**Why that is right for this product.**
+
+1. **Availability is the scarce resource.** On a campus of 400, plenty of people
+   like the gym. Far fewer are free at 6am on the days you are. The binding
+   constraint is coincidence of schedule, and ranking should spend its resolution
+   on the scarce thing.
+
+2. **The product is built on simultaneity.** You cannot train together at
+   different times — it is not a preference, it is a precondition. A level
+   mismatch is negotiable: a serious runner can do an easy run with a beginner,
+   and often will. An empty overlap is not negotiable by anyone.
+
+3. **Partnerships die of logistics, not incompatibility.** A gym partnership
+   that fails usually fails because the two people stopped being able to meet,
+   not because their training styles differed slightly. Weighting toward days
+   optimises for the failure mode that actually occurs.
+
+4. **A common term discriminates poorly.** With three levels, roughly a third of
+   candidates match on level by chance, so the term carries little information —
+   the same argument AD-9 makes about tags. `shared_days` varies from 1 to 7 and
+   separates candidates far more sharply.
+
+5. **It matches the problem statement.** PRD 1.1 frames the problem as
+   *discovery* and *status cost*, not compatibility filtering. The app's job is
+   to surface someone you could plausibly meet; judging whether you suit each
+   other is what the two of you do afterwards.
+
+**The assumption underneath, stated honestly.** This bets that a level-mismatched
+pair who can actually meet does better than a level-matched pair who mostly
+cannot. That is plausible but **untested** — and V1 cannot test it, because PRD
+Q4 concedes that handing off to WhatsApp makes outcomes invisible to the
+product. If it turned out that level mismatch is what kills partnerships, the
+right response would be to raise the level weight or promote it to a soft filter,
+not to reshuffle everything.
+
+**Consequence for the UI.** Because level ranks rather than filters, the intent
+form now says so: *"You'll still match with every level — this just nudges
+similar ones higher."* Choosing "Serious" otherwise reads as "don't pair me with
+beginners" — a request the app never agreed to, and would visibly break on the
+first match list.
+
+---
+
 # Open questions
 
 Decisions deliberately deferred, recorded so the phase that owns them decides

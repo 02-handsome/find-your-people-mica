@@ -123,6 +123,16 @@ export function IntentForm({
 
       <div>
         <span className={LABEL}>How would you describe yourself?</span>
+        {/* Same class of gap as the tag picker (AD-9): experience level is a
+            SCORING term, not a filter. F3 gives it `match ? 2 : 0`, so a
+            "Serious" runner is still matched with beginners — just two points
+            lower, which one extra shared day already outweighs. Without this
+            line, choosing "Serious" reads as "don't pair me with beginners",
+            which is a request the app never agreed to. */}
+        <p className={`mb-3 ${HINT}`}>
+          You&rsquo;ll still match with every level — this just nudges similar
+          ones higher.
+        </p>
         <ChipGroup
           name="experience_level"
           options={EXPERIENCE_LEVELS.map((l) => ({
