@@ -120,6 +120,22 @@ export function formatExpiry(expiresAt: string, now: Date = new Date()): string 
 
   const hours = ms / 3_600_000;
 
+  // Past a month, a day count stops being a countdown and starts looking like a
+  // bug. The seeded accounts sit far in the future on purpose — their published
+  // credentials have to keep working long after submission (AD-13) — and
+  // "Expires in 493 days" reads as broken on the very screen a grader opens.
+  // A date reads as deliberate.
+  //
+  // This branch never affects a real intent: F2.1 gives those exactly 7 days,
+  // so the countdown below is what users actually see.
+  if (hours / 24 > 30) {
+    return `Expires ${new Date(expiresAt).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    })}`;
+  }
+
   if (hours >= 24) {
     const days = Math.round(hours / 24);
     return `Expires in ${days} day${days === 1 ? "" : "s"}`;

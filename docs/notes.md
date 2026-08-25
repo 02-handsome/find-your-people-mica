@@ -3,6 +3,38 @@
 Running record of decisions I need to be able to defend. One entry each: what I
 chose, why, and what I gave up.
 
+## Index
+
+- [AD-1 — Authorization lives in the server layout. Middleware only refreshes the token cookie.](#ad-1--authorization-lives-in-the-server-layout-middleware-only-refreshes-the-token-cookie)
+- [AD-2 — Next.js pinned to 15.5.23, not 16.x](#ad-2--nextjs-pinned-to-15523-not-16x)
+- [AD-3 — The keep-alive pings a Postgres function, not a table or the REST root.](#ad-3--the-keep-alive-pings-a-postgres-function-not-a-table-or-the-rest-root)
+- [AD-4 — Email confirmation is disabled. Re-enable it before real deployment.](#ad-4--email-confirmation-is-disabled-re-enable-it-before-real-deployment)
+- [AD-5 — The campus domain allowlist lives in Postgres, not TypeScript.](#ad-5--the-campus-domain-allowlist-lives-in-postgres-not-typescript)
+- [AD-6 — Route groups, not middleware, enforce F1.6.](#ad-6--route-groups-not-middleware-enforce-f16)
+- [AD-7 — The live URL now opens on /login, not the Phase 1 homepage.](#ad-7--the-live-url-now-opens-on-login-not-the-phase-1-homepage)
+- [AD-8 — F1's acceptance criterion is arithmetically unsatisfiable. Kept the fields, reported the number.](#ad-8--f1s-acceptance-criterion-is-arithmetically-unsatisfiable-kept-the-fields-reported-the-number)
+- [AD-9 — The tag vocabulary mixes activities with unrelated interests, on purpose.](#ad-9--the-tag-vocabulary-mixes-activities-with-unrelated-interests-on-purpose)
+- [AD-10 — A column-level GRANT cannot narrow a table-wide one. Found by testing.](#ad-10--a-column-level-grant-cannot-narrow-a-table-wide-one-found-by-testing)
+- [AD-11 — Profile editing is in scope, beyond F1.3. A wrong contact handle is unrecoverable otherwise.](#ad-11--profile-editing-is-in-scope-beyond-f13-a-wrong-contact-handle-is-unrecoverable-otherwise)
+- [AD-12 — The Supabase secret key is local-only, and the seed refuses to run without it.](#ad-12--the-supabase-secret-key-is-local-only-and-the-seed-refuses-to-run-without-it)
+- [AD-13 — Seeded expiry is a fixture choice, not a spec deviation.](#ad-13--seeded-expiry-is-a-fixture-choice-not-a-spec-deviation)
+- [AD-14 — The one-active-intent rule and expiry-on-read mildly conflict.](#ad-14--the-one-active-intent-rule-and-expiry-on-read-mildly-conflict)
+- [AD-15 — Column-scoped INSERT, not just UPDATE.](#ad-15--column-scoped-insert-not-just-update)
+- [AD-16 — An enum constrains values, not transitions.](#ad-16--an-enum-constrains-values-not-transitions)
+- [AD-17 — A zero-row UPDATE returns no error. Security tests must count rows.](#ad-17--a-zero-row-update-returns-no-error-security-tests-must-count-rows)
+- [AD-18 — AD-14 resolved: one function, one transaction, and only for create.](#ad-18--ad-14-resolved-one-function-one-transaction-and-only-for-create)
+- [AD-19 — F3 weights availability above compatibility. Deliberately.](#ad-19--f3-weights-availability-above-compatibility-deliberately)
+- [AD-20 — N4 is enforced by a function signature, not by a filter.](#ad-20--n4-is-enforced-by-a-function-signature-not-by-a-filter)
+- [AD-21 — F3.4's ordering puts availability above score, deliberately.](#ad-21--f34s-ordering-puts-availability-above-score-deliberately)
+- [AD-22 — Two requirements were passing vacuously. Forced them instead.](#ad-22--two-requirements-were-passing-vacuously-forced-them-instead)
+- [AD-23 — OQ-1 resolved: withdrawing auto-declines OUTGOING requests only.](#ad-23--oq-1-resolved-withdrawing-auto-declines-outgoing-requests-only)
+- [AD-24 — N4 after Phase 6: two shapes that cannot leak, one that cannot leak wrongly.](#ad-24--n4-after-phase-6-two-shapes-that-cannot-leak-one-that-cannot-leak-wrongly)
+- [AD-25 — Test scripts delete only rows they created. Enforced, not remembered.](#ad-25--test-scripts-delete-only-rows-they-created-enforced-not-remembered)
+- [AD-26 — Phase 7: three silent failures, one redirect loop, and a countdown that read as a bug.](#ad-26--phase-7-three-silent-failures-one-redirect-loop-and-a-countdown-that-read-as-a-bug)
+- [AD-13 revised (Phase 7) — the published test accounts get the long horizon too.](#ad-13-revised-phase-7--the-published-test-accounts-get-the-long-horizon-too)
+- [OQ-1 — RESOLVED in Phase 6. See AD-23.](#oq-1--resolved-in-phase-6-see-ad-23)
+- [OQ-1 (original) — What happens to pending requests when the intent behind them is withdrawn?](#oq-1-original--what-happens-to-pending-requests-when-the-intent-behind-them-is-withdrawn)
+
 ---
 
 ## AD-1 — Authorization lives in the server layout. Middleware only refreshes the token cookie.
@@ -485,6 +517,10 @@ rows.
 actually logs into, so expiry stays demonstrable on the screens where F2.3's
 countdown appears. And it degrades gracefully: if theirs lapse, the grader posts
 a new intent and the 30-strong pool is still there.
+
+> **Revised in Phase 7 — see "AD-13 revised" below.** The test accounts now get
+> the long horizon too. Published credentials that stop working after seven days
+> are worse than expiry being demonstrable on them.
 
 ---
 
@@ -984,8 +1020,88 @@ difference is invisible in the code and shows up as missing data much later, in
 whatever the test happened to run beside. And test cleanup is the worst place
 for it, because a destructive bug there is *reported as a pass*.
 
+---
+
+## AD-26 — Phase 7: three silent failures, one redirect loop, and a countdown that read as a bug.
+
+The feature freeze was supposed to be polish. The audit found bugs.
+
+**Every route lacked a loading state.** All eight are dynamic Server Components,
+so a navigation blocked on a server round-trip rendering *nothing*. On mobile
+data that is the blank screen `CLAUDE.md` forbids. Six `loading.tsx` files now
+render skeletons that mirror the real layout — same card borders, same avatar
+size, same chip counts — so nothing jumps on arrival.
+
+**Three mutations ignored their errors**, and the worst one was the most
+important action in the product:
+
+| Where | Was | Consequence |
+| --- | --- | --- |
+| accept / decline | `await update(...)`, result never read | a failed **accept** looked identical to success — the user believes they connected and finds nothing on Connections |
+| `withdrawIntentAction` | logged, then redirected | a failed withdrawal looked successful; the intent stays in everyone's match pool |
+| `signOutAction` | ignored | cookie survives, redirect bounces off `(auth)/layout`, user lands back on home still logged in, told nothing |
+
+**Two reads lied about the world.** `getIncomingRequests` and `getConnections`
+returned `[]` on failure, so a broken query rendered "No connections yet" — a
+confident claim made on no information, on the screen that exists to hold
+contact details someone was promised. `matches-server.ts` already separated
+`failed` from empty and its own comment explained why; these two were written
+without that care.
+
+**A database hiccup produced a redirect loop.** `getProfile()` returned null for
+both "no row" and "query failed". So: null → `(complete)/layout` redirects to
+`/profile-setup` → also null → redirects to `/login` → the session is still
+valid (the JWT check is local and needs no database) → `(auth)/layout` redirects
+to `/` → round again. The user saw `ERR_TOO_MANY_REDIRECTS`, a *browser* error
+page. Fixed by throwing on query failure so `app/error.tsx` catches it, leaving
+`null` to mean only what it should.
+
+**A fix I made and reverted, because the log contradicted me.** I also changed
+home to throw when `profile` was null, reasoning that `return null` renders an
+empty `<main>`. The dev log showed the error firing on every anonymous request:
+Next renders layouts and pages **in parallel**, so the page starts before the
+layout's redirect resolves, and null is legitimate there. Nothing was ever
+rendered to a user in that window. Reverted, with the reasoning kept in place so
+it is not "fixed" again.
+
+**"Expires in 493 days."** Giving the published test accounts a far-future
+expiry (below) made F2.3's countdown absurd on the one screen a grader opens.
+`formatExpiry` now switches to a date past 30 days — "Expires 1 Jan 2028" reads
+as deliberate where a day count reads as broken. Real intents are always 7 days
+(F2.1), so users never see that branch.
+
+**One limitation worth recording**, because it shaped how this phase was
+verified: adding `loading.tsx` introduces Suspense boundaries, and the automated
+browser pane cannot run the streaming swap — every screen appeared stuck on its
+skeleton, in dev *and* in a production build. The content was provably there, in
+a `<div hidden>` awaiting hydration. Measurements were taken by removing that
+attribute to force a real layout pass. Worth knowing that the tooling's silence
+was not the app's fault, and worth not "fixing" the app in response to it.
+
+---
+
+## AD-13 revised (Phase 7) — the published test accounts get the long horizon too.
+
+AD-13 originally gave the 30 fixtures a far-future `expires_at` and left the two
+test accounts on the real 7-day window, so expiry stayed demonstrable on an
+account a grader logs into.
+
+**That was the wrong trade.** Those two credentials are printed on the login
+screen and in the README. Seven days after the last seed run they stop working,
+and a grader opening the app two weeks after submission lands on the empty state
+with nothing to tell them why. **Published credentials have to work
+indefinitely.** Both now expire 2027-12-31.
+
+Expiry is still demonstrable, just not there: `verify:constraints` plants a
+lapsed intent and proves AD-14's cleanup, and any account that posts an intent
+through the UI — including the owner's own — gets F2.1's real `now() + 7 days`.
+
+# Open questions
+
 Decisions deliberately deferred, recorded so the phase that owns them decides
 on purpose rather than inheriting whatever happened by accident.
+
+---
 
 ## OQ-1 — RESOLVED in Phase 6. See AD-23.
 

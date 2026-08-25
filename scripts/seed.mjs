@@ -186,8 +186,22 @@ const PEOPLE = [
 
 const ACTIVITY_ORDER = ["gym", "running", "sport"];
 
-/** Fixtures get a far-future expiry; see docs/notes.md AD-13. */
-const FIXTURE_EXPIRY = "2027-12-31T23:59:59Z";
+/**
+ * Everything seeded gets a far-future expiry — the 30 fixtures AND both
+ * published test accounts. See docs/notes.md AD-13 (revised in Phase 7).
+ *
+ * The test accounts originally kept a real 7-day window so expiry stayed
+ * demonstrable on an account a grader logs into. That was the wrong trade: it
+ * meant the two credentials printed on the login screen and in the README stop
+ * working a week after the last seed run, and a grader opening the app two
+ * weeks after submission lands on the empty state with no way to tell why.
+ * Credentials that are published have to work indefinitely.
+ *
+ * Expiry is still demonstrable, just not on those two accounts: the constraint
+ * suite plants a lapsed intent and proves AD-14's cleanup, and any account that
+ * posts an intent through the UI gets F2.1's real now() + 7 days.
+ */
+const SEED_EXPIRY = "2027-12-31T23:59:59Z";
 
 function emailFor(name) {
   return (
@@ -214,7 +228,7 @@ const FIXTURES = PEOPLE.map((person, i) => {
       time_start: slot.start,
       time_end: slot.end,
       experience_level: person.level,
-      expires_at: FIXTURE_EXPIRY,
+      expires_at: SEED_EXPIRY,
     },
   };
 });
@@ -242,7 +256,7 @@ const TEST_ACCOUNTS = [
       time_start: "06:00",
       time_end: "09:00",
       experience_level: "regular",
-      expires_at: null, // null -> use the column default of now() + 7 days
+      expires_at: SEED_EXPIRY,
     },
   },
   {
@@ -257,7 +271,7 @@ const TEST_ACCOUNTS = [
       time_start: "06:00",
       time_end: "09:30",
       experience_level: "regular",
-      expires_at: null,
+      expires_at: SEED_EXPIRY,
     },
   },
 ];
@@ -353,9 +367,7 @@ async function main() {
       experience_level: f.intent.experience_level,
       status: "active",
     };
-    // Omit expires_at entirely for the test accounts so the column default
-    // (now() + 7 days) applies.
-    if (f.intent.expires_at) row.expires_at = f.intent.expires_at;
+    row.expires_at = f.intent.expires_at;
 
     const { error: intentError } = await admin.from("intents").insert(row);
     if (intentError) fail(`intent ${f.email}: ${intentError.message}`);

@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: "Connections · Find Your People" };
 
 /** Screen 6 (PRD section 7) — accepted matches with revealed contact handles. */
 export default async function ConnectionsPage() {
-  const connections = await getConnections();
+  const { connections, failed } = await getConnections();
 
   return (
     <main className="mx-auto w-full max-w-sm px-6 py-10">
@@ -21,7 +21,21 @@ export default async function ConnectionsPage() {
         </p>
       </header>
 
-      {connections.length === 0 ? (
+      {failed ? (
+        /* Distinct from "none yet" on purpose. Telling someone they have no
+           connections when the query broke is a claim about their life made on
+           no information — and here it is the worst possible claim, because the
+           screen exists to hold contact details they were promised. */
+        <section className={`mt-8 ${CARD}`}>
+          <h2 className="text-base font-medium">
+            Couldn&rsquo;t load your connections
+          </h2>
+          <p className={`mt-1 ${HINT}`}>
+            Something went wrong on our side. Nothing has been lost — any
+            connections you&rsquo;ve made are still there.
+          </p>
+        </section>
+      ) : connections.length === 0 ? (
         /* CLAUDE.md: never a blank screen. Explains the mechanism rather than
            reporting an absence — "none yet" alone reads like something broke. */
         <section className={`mt-8 ${CARD}`}>

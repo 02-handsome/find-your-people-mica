@@ -50,36 +50,69 @@ export async function sendRequestAction(
   return { sent: true, error: null };
 }
 
-/** PRD F4.4 — the recipient accepts. This is what reveals contact (F4.5). */
-export async function acceptRequestAction(formData: FormData) {
-  await requireUserId();
-  await setStatus(String(formData.get("request_id") ?? ""), "accepted");
-}
-
-/** PRD F4.4 — the recipient declines. Silent to the sender (F4.6). */
-export async function declineRequestAction(formData: FormData) {
-  await requireUserId();
-  await setStatus(String(formData.get("request_id") ?? ""), "declined");
-}
+export type RespondState = { error: string | null };
 
 /**
- * A plain update, not a SECURITY DEFINER function.
+ * PRD F4.4 — the recipient accepts or declines.
  *
- * Three independent controls already cover it, so a privileged wrapper would
- * add a second privileged path for nothing (docs/notes.md AD-18):
- *   - RLS `requests_update_recipient` restricts status writes to the recipient
- *   - the column grant allows only `status` to be written
- *   - the AD-16 trigger permits only pending -> accepted | declined
+ * One action for both, so the card has a single form and a single error slot.
+ * Which button was pressed comes from `decision`.
+ *
+ * Until Phase 7 this ignored its result entirely — `await update(...)` with no
+ * check. That was the worst instance of the pattern in the codebase: accepting
+ * is the F4.5 reveal, the one irreversible action in the product, and a failure
+ * looked exactly like a success. Someone would believe they had connected and
+ * find nothing on the Connections screen.
  */
-async function setStatus(requestId: string, status: "accepted" | "declined") {
-  if (!requestId) return;
+export async function respondToRequestAction(
+  _previous: RespondState,
+  formData: FormData
+): Promise<RespondState> {
+  await requireUserId();
+
+  const requestId = String(formData.get("request_id") ?? "").trim();
+  const decision = String(formData.get("decision") ?? "").trim();
+
+  if (!requestId) return { error: "Missing request." };
+  if (decision !== "accept" && decision !== "decline") {
+    return { error: "Unknown action." };
+  }
 
   const supabase = await createClient();
 
-  await supabase.from("requests").update({ status }).eq("id", requestId);
+  // A plain update, not a SECURITY DEFINER function. Three independent controls
+  // already cover it, so a privileged wrapper would add a second privileged
+  // path for nothing (docs/notes.md AD-18):
+  //   - RLS `requests_update_recipient` restricts status writes to the recipient
+  //   - the column grant allows only `status` to be written
+  //   - the AD-16 trigger permits only pending -> accepted | declined
+  const { data, error } = await supabase
+    .from("requests")
+    .update({ status: decision === "accept" ? "accepted" : "declined" })
+    .eq("id", requestId)
+    .select();
 
-  // A zero-row result is not an error worth surfacing: it means the request was
-  // already resolved, or belongs to someone else and RLS filtered it out. Home
-  // re-renders from the database either way, so it shows the truth.
+  if (error) {
+    // On a failed accept, saying nothing was shared is the important half: the
+    // whole promise of the product is that contact moves only on acceptance,
+    // and a vague "something went wrong" leaves the user unsure whether their
+    // number went out anyway.
+    return {
+      error:
+        decision === "accept"
+          ? "Could not accept that request. Nothing has been shared — please try again."
+          : "Could not decline that request. Please try again.",
+    };
+  }
+
+  // AD-17: PostgREST reports no error when an UPDATE matches zero rows, so
+  // "nothing happened" is otherwise indistinguishable from success. Zero rows
+  // here means the request was already resolved, or belongs to someone else and
+  // RLS filtered it out.
+  if (!data || data.length === 0) {
+    return { error: "That request is no longer waiting for you." };
+  }
+
   revalidatePath("/", "layout");
+  return { error: null };
 }

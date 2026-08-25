@@ -69,11 +69,17 @@ export default async function LoginPage() {
           ))}
         </ul>
         <p className={`mt-3 ${HINT}`}>
-          {/* Both post gym intents on overlapping weekday mornings, so they
-              appear in each other's match list. That makes the whole S1 loop
-              reachable without signing up at all. */}
-          These two match each other, so the full request → accept → reveal loop
-          can be demonstrated using only these logins — no signup needed.
+          {/* The direction is not a detail. Sending from test.one is refused —
+              F3.3 returns the top 3 and test.two does not make test.one's,
+              so F4.1 correctly rejects it. Without this line that reads as a
+              broken Connect button. See lib/test-accounts.ts. */}
+          <strong className="font-medium text-neutral-700 dark:text-neutral-300">
+            Start from test.two.
+          </strong>{" "}
+          Send the request from there, then log in as test.one to accept — the
+          whole request → accept → reveal loop, no signup needed. Matching shows
+          only your top 3, so it isn&rsquo;t symmetric: going the other way will
+          say they aren&rsquo;t in your matches.
         </p>
       </section>
     </>

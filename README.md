@@ -6,9 +6,9 @@ thing. Contact details are revealed only after both sides agree.
 
 **Live URL:** https://find-your-people-mica.vercel.app
 
-**Build status:** Phase 6 of 8 complete — request → accept → reveal. The full
-loop works across two accounts. See `docs/PRD.md` section 9 for the full build
-sequence.
+**Build status:** Phase 7 of 8 complete — feature freeze: loading states, error
+boundaries, and every screen checked at 375px. See `docs/PRD.md` section 9 for
+the full build sequence.
 
 ## How contact details are protected (PRD N4)
 
@@ -128,6 +128,7 @@ scripts/seed.mjs           seed data (needs SUPABASE_SECRET_KEY)
 scripts/verify-seed.mjs    measures F5.1 / F5.2 / F5.3 / AD-9
 scripts/verify-constraints.mjs  attempts everything the schema forbids
 scripts/verify-matches.mjs      reimplements F3 independently and compares
+scripts/verify-reveal.mjs       attempts the N4 leak in every request state
 .github/workflows/         the daily keep-alive job
 docs/PRD.md                product requirements
 docs/notes.md              architecture decisions, with reasoning

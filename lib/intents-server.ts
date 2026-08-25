@@ -24,7 +24,7 @@ export const getActiveIntent = cache(async (): Promise<Intent | null> => {
 
   const supabase = await createClient();
 
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("intents")
     .select(
       "id, user_id, activity, days, time_start, time_end, experience_level, status, created_at, expires_at"
@@ -33,6 +33,14 @@ export const getActiveIntent = cache(async (): Promise<Intent | null> => {
     .eq("status", "active")
     .gt("expires_at", new Date().toISOString())
     .maybeSingle();
+
+  // Same reasoning as getProfile: a failed query is not "no intent". Returning
+  // null on error made /matches silently redirect home and made home announce
+  // "No active intent" — telling the user their post had gone when the truth was
+  // that we could not read it. Throwing routes it to app/error.tsx instead.
+  if (error) {
+    throw new Error(`Could not load your intent: ${error.message}`);
+  }
 
   return (data as Intent | null) ?? null;
 });

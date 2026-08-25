@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { signOutAction } from "@/app/(app)/actions";
 import { Avatar } from "@/components/Avatar";
 import { IncomingRequestCard } from "@/components/IncomingRequestCard";
 import { IntentCard } from "@/components/IntentCard";
+import { LogOutButton } from "@/components/LogOutButton";
 import { BUTTON_PRIMARY_LINK, CARD, HINT } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { getActiveIntent } from "@/lib/intents-server";
@@ -24,12 +24,26 @@ export const metadata: Metadata = { title: "Home · Find Your People" };
  * with an irreversible action attached.
  */
 export default async function HomePage() {
-  // (complete)/layout.tsx has already guaranteed a complete profile.
   const [profile, intent, incoming] = await Promise.all([
     getProfile(),
     getActiveIntent(),
     getIncomingRequests(),
   ]);
+
+  // Returns nothing rather than throwing, and that is deliberate.
+  //
+  // I tried throwing here first, on the reasoning that `return null` renders an
+  // empty <main> — a blank screen. It was wrong, and the dev log said so
+  // immediately: the error fired on every anonymous request. Next renders
+  // layouts and pages IN PARALLEL, so this component starts before
+  // (app)/layout's redirect resolves, and `profile` is legitimately null for a
+  // caller with no session.
+  //
+  // Nothing is rendered to anyone in that window — the redirect discards this
+  // output — so the blank-screen worry did not apply. What DID matter is now
+  // handled one level down: getProfile() throws on a query FAILURE, so null
+  // here only ever means "no session" or "no row", and a guard redirects for
+  // both. See lib/auth.ts.
   if (!profile) return null;
 
   return (
@@ -48,15 +62,28 @@ export default async function HomePage() {
           "no requests" panel on every visit would be noise, and this screen
           already has a designed empty state for the thing that matters when
           you are new (no intent). */}
-      {incoming.length > 0 ? (
+      {incoming.failed ? (
+        /* An inline failure, not a thrown one: the rest of this screen — the
+           user's intent, their contact handle — loaded fine and is still
+           useful. Degrading one section beats replacing the whole page. */
+        <section className={`mt-8 ${CARD}`}>
+          <h2 className="text-base font-medium">
+            Couldn&rsquo;t load your requests
+          </h2>
+          <p className={`mt-1 ${HINT}`}>
+            If someone has asked to connect, it&rsquo;s still waiting — reload to
+            try again.
+          </p>
+        </section>
+      ) : incoming.requests.length > 0 ? (
         <section className="mt-8">
           <h2 className="text-sm font-medium">
-            {incoming.length === 1
+            {incoming.requests.length === 1
               ? "1 person wants to connect"
-              : `${incoming.length} people want to connect`}
+              : `${incoming.requests.length} people want to connect`}
           </h2>
           <ul className="mt-3 space-y-4">
-            {incoming.map((request) => (
+            {incoming.requests.map((request) => (
               <IncomingRequestCard key={request.request_id} request={request} />
             ))}
           </ul>
@@ -115,14 +142,7 @@ export default async function HomePage() {
           Edit profile
         </Link>
 
-        <form action={signOutAction}>
-          <button
-            type="submit"
-            className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
-          >
-            Log out
-          </button>
-        </form>
+        <LogOutButton />
       </div>
     </main>
   );

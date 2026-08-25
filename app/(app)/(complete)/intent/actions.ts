@@ -136,8 +136,13 @@ export async function updateIntentAction(
   redirect("/");
 }
 
+export type WithdrawState = { error: string | null };
+
 /** PRD F2.5 — withdraw, plus OQ-1's auto-decline. */
-export async function withdrawIntentAction() {
+export async function withdrawIntentAction(
+  _previous: WithdrawState,
+  _formData: FormData
+): Promise<WithdrawState> {
   await requireUserId();
 
   const supabase = await createClient();
@@ -155,11 +160,17 @@ export async function withdrawIntentAction() {
   // SECURITY DEFINER function is justified.
   const { error } = await supabase.rpc("withdraw_intent");
 
+  // Reported, not just logged. Before Phase 7 this logged and redirected home
+  // regardless, so a failed withdrawal looked exactly like a successful one —
+  // and the user would see their intent still sitting there with no explanation,
+  // or worse, assume it was gone when it was still in everyone's match pool.
   if (error) {
-    console.error("withdraw_intent failed:", error.message);
+    return {
+      error: "Could not withdraw your intent — it's still live. Please try again.",
+    };
   }
 
-  // A zero-row outcome is not worth reporting: it means the intent already
+  // A zero-row outcome is deliberately NOT an error: it means the intent already
   // lapsed or was withdrawn in another tab, and the user's goal — "this should
   // not be live" — is already true. Home renders the real state either way.
   revalidatePath("/", "layout");
