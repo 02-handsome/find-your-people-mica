@@ -318,6 +318,22 @@ to*. That is the difference between a partner you meet twice and one you keep.
 rather than clustering them, or `overlapping_tags` collapses back to noise and
 ranking is driven by `shared_days` alone.
 
+**Consequence for the UI (added in Phase 4).** If tags rank rather than filter,
+the profile screen has to say so. "Pick 3 things you're into", sitting above a
+list containing Films, Anime and Coffee, reads as a promise of interest-based
+matching — and the app would silently never deliver it, because F3.1 builds the
+pool from `activity` and F3.2 hard-filters on day and time overlap. Someone who
+picks Films and is shown three gym partners with no interest in film has been
+misled by the form, not by the algorithm.
+
+One line above the chips now states the actual contract: *"These don't decide
+who you match with — your activity and times do. They set the order."*
+
+The general point is worth keeping: **a scoring term and a filter feel identical
+to a user filling in a form.** Both are "things I told the app about myself". The
+difference only shows up in results, by which time the expectation has already
+been set. Any field that ranks rather than filters needs to say which it is.
+
 ---
 
 ## AD-10 — A column-level GRANT cannot narrow a table-wide one. Found by testing.

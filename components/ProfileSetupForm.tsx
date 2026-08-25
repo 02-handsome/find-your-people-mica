@@ -73,6 +73,19 @@ export function ProfileSetupForm({
         <span className={LABEL}>
           Pick {TAGS_REQUIRED} things you&rsquo;re into
         </span>
+        {/* Placed ABOVE the chips, not below: it sets an expectation for the
+            choice rather than annotating it afterwards.
+
+            Tags are a RANKING signal, never a filter (docs/notes.md AD-9).
+            F3.1 builds the candidate pool from `activity`, and F3.2 hard-filters
+            on a shared day and an overlapping time window. Tags appear only in
+            the score, as `overlapping_tags x 2`. Without this line, choosing
+            "Films" reads as a promise to find film people — and the app would
+            silently never deliver on it. */}
+        <p className={`mb-3 ${HINT}`}>
+          These don&rsquo;t decide who you match with — your activity and times
+          do. They set the order.
+        </p>
         <ChipGroup
           name="tags"
           options={TAGS}
