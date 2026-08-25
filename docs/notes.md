@@ -824,12 +824,123 @@ invisible to every other check here.
 
 ---
 
+## AD-23 — OQ-1 resolved: withdrawing auto-declines OUTGOING requests only.
+
+**Decision.** `withdraw_intent()` sets the intent to `withdrawn` and, in the same
+transaction, sets to `declined` every pending request sent **from** that intent.
+Incoming requests are untouched.
+
+**The principle, in the owner's words:**
+
+> Withdrawing means **"I've stopped looking"**, not **"I refuse everyone who
+> already approached me."**
+
+That sentence decides the whole question. Outgoing requests have lost their
+subject: F4.3 shows the recipient the *sender's intent details*, and those now
+describe a plan that no longer exists. Accepting one would reveal both contact
+handles over nothing. Incoming requests reference the *other* person's still-live
+intent — someone found you and asked, and answering them is still a coherent
+thing to do. Auto-declining those would silently refuse people on the
+withdrawer's behalf, which is a materially bigger act than taking down your own
+post and one they never asked for.
+
+**Why it is silent, with no new machinery.** F4.6 already establishes that a
+decline is silent to the sender. Here the sender *is* the withdrawer — they sent
+the request and they chose to withdraw — so there is nobody to notify who does
+not already know. The recipient simply sees it leave their list, which is F4.6's
+"removed from both views".
+
+**Why one transaction.** Split into two statements, a failure between them
+leaves a withdrawn intent with live requests pointing at it — precisely the
+state OQ-1 exists to prevent. That moved withdraw from a plain update to a
+`SECURITY DEFINER` function, and for the reason AD-18 gives rather than by
+preference: the sender **cannot** write those rows directly, because
+`requests_update_recipient` deliberately restricts status changes to the
+recipient. The operation needs more privilege than the caller has, which is the
+test for when a privileged wrapper is justified.
+
+---
+
+## AD-24 — N4 after Phase 6: two shapes that cannot leak, one that cannot leak wrongly.
+
+Until Phase 6, N4 was satisfiable by never returning `contact_handle` at all
+(AD-20). This phase has to return it, conditionally, so the guarantee changes
+form.
+
+**There are exactly three ways any user can read another user's row.** `users`
+keeps the self-only RLS from `0001`, and no cross-user policy has ever been
+added. So this is the entire attack surface:
+
+| Function | Returns it? | Why that is guaranteed |
+| --- | --- | --- |
+| `get_matches()` | no | absent from `RETURNS TABLE` |
+| `get_incoming_requests()` | no | absent from `RETURNS TABLE` |
+| `get_connections()` | yes | driven **from** `requests where status = 'accepted'` |
+
+**The third one is the interesting one.** The naive version selects `from users`
+and bolts on `where exists (accepted request)`. That is a **filter**, and a
+filter can be deleted while everything still compiles and runs — exactly the
+failure mode AD-10 caught in production, where a column grant looked like
+enforcement and silently did nothing.
+
+Instead the query is *about* accepted requests, and finds the person by
+following one:
+
+```sql
+from public.requests r
+join public.users other
+  on other.id = case when r.from_user_id = v_user then r.to_user_id
+                     else r.from_user_id end
+where r.status = 'accepted' and (r.from_user_id = v_user or r.to_user_id = v_user)
+```
+
+`users` is not the subject. It is reachable only through the join key an
+accepted request supplies. Removing the `status` line does not widen the results
+slightly — it changes what the query is about, and stops making sense.
+
+**The `case` expression is what makes F4.5 symmetric.** There is one accepted
+row, not one per direction, so neither party can be revealed without the other.
+Mutual reveal is a property of the data model rather than of two calls that must
+agree.
+
+**Checkable without reading application code:**
+
+```sql
+select p.proname from pg_proc p, unnest(p.proargnames) col
+ where p.pronamespace = 'public'::regnamespace and col = 'contact_handle';
+-- expect exactly one row: get_connections
+```
+
+**And proved by attempted violation.** `npm run verify:reveal` tries to obtain
+another user's handle in every reachable state — no request, pending (both
+directions), declined (both directions), third-party accepted, and after an
+OQ-1 auto-decline — by all three routes at once (`get_connections`, stray keys
+in the other two functions, and a direct table read). Eight of the nine attempts
+must fail; the ninth must succeed for both parties. 26 checks.
+
+**What is deliberately NOT claimed.** `SECURITY DEFINER` means RLS does not
+apply inside these functions, so the argument reduces to the correctness of
+three functions with two parameters between them. That is a much smaller thing
+to get right than every query in the application — which is the point — but it
+is not zero, and it is why none of them accepts a `user_id` for the caller.
+
+---
+
 # Open questions
 
 Decisions deliberately deferred, recorded so the phase that owns them decides
 on purpose rather than inheriting whatever happened by accident.
 
-## OQ-1 — What happens to pending requests when the intent behind them is withdrawn? (Phase 6)
+## OQ-1 — RESOLVED in Phase 6. See AD-23.
+
+Decided as the leading candidate below, with one refinement: **outgoing requests
+only**. The reasoning and the sentence that settled it are in AD-23. The original
+statement of the question is kept here because the alternatives it weighed are
+still the argument for why the answer is right.
+
+---
+
+## OQ-1 (original) — What happens to pending requests when the intent behind them is withdrawn?
 
 **The gap.** F2.5 says a withdrawn intent "disappears from all match pools
 immediately". But `requests` rows carry `intent_id`, and F4.3 says the recipient

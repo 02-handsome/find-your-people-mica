@@ -1,13 +1,11 @@
 import { Avatar } from "@/components/Avatar";
+import { ConnectButton } from "@/components/ConnectButton";
 import { CARD, HINT } from "@/components/ui";
 import { DAYS, EXPERIENCE_LABELS, formatTimeRange } from "@/lib/intents";
 import { RELAXED_LABEL, type MatchCandidate } from "@/lib/matches";
 
 /**
  * Screen 5 — one candidate: avatar, name, year, tags, days and time.
- *
- * No Connect button. Screen 5 lists one, but it is F4.1 and belongs to
- * Phase 6; a button that does nothing would be worse than its absence.
  *
  * `score` is deliberately not rendered. The PRD does not ask for it, and
  * showing a number invites the reader to argue with the weighting rather than
@@ -74,6 +72,9 @@ export function MatchCard({ candidate }: { candidate: MatchCandidate }) {
           {RELAXED_LABEL}
         </p>
       ) : null}
+
+      {/* F4.1 — "From a match card, user sends a connection request." */}
+      <ConnectButton toUserId={candidate.user_id} />
     </li>
   );
 }

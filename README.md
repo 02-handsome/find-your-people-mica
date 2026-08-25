@@ -6,8 +6,45 @@ thing. Contact details are revealed only after both sides agree.
 
 **Live URL:** https://find-your-people-mica.vercel.app
 
-**Build status:** Phase 5 of 8 complete — the ranked match list. Three filtered,
-scored results render. See `docs/PRD.md` section 9 for the full build sequence.
+**Build status:** Phase 6 of 8 complete — request → accept → reveal. The full
+loop works across two accounts. See `docs/PRD.md` section 9 for the full build
+sequence.
+
+## How contact details are protected (PRD N4)
+
+N4 is the product's one real security requirement: a `contact_handle` must never
+be returned unless a request between those two users is `accepted`.
+
+`users` is readable only by its owner (Row Level Security, since migration
+`0001`), and **no cross-user read policy exists**. So there are exactly three
+ways to read another person's row, and this is the whole attack surface:
+
+| Function | Returns `contact_handle`? | Guaranteed by |
+| --- | --- | --- |
+| `get_matches()` | no | absent from its `RETURNS TABLE` |
+| `get_incoming_requests()` | no | absent from its `RETURNS TABLE` |
+| `get_connections()` | yes | the query is driven **from** accepted requests |
+
+The third does not *filter* users by whether a request was accepted — it selects
+**from** `requests where status = 'accepted'` and reaches the person through the
+join key that row supplies. There is no result it can produce without one.
+
+Verify it from the database, without reading any application code:
+
+```sql
+select p.proname from pg_proc p, unnest(p.proargnames) col
+where p.pronamespace = 'public'::regnamespace and col = 'contact_handle';
+-- expect exactly one row: get_connections
+```
+
+```bash
+npm run verify:reveal
+```
+
+Attempts to obtain another user's handle in every reachable state — no request,
+pending, declined, third-party accepted, and after a withdrawal auto-decline —
+by all three routes at once. Eight attempts must fail; one must succeed, for
+both parties. Full reasoning: `docs/notes.md` AD-24.
 
 > Opening the live URL redirects to `/login`. That is required behaviour, not a
 > fault: PRD F1.6 makes every route except login/signup private. See
@@ -106,6 +143,7 @@ idempotent, so re-running one is always safe:
 | `0002_intents_requests.sql` | `intents`, `requests`, enums, constraints, triggers |
 | `0003_create_intent.sql` | `create_intent()` — atomic lazy-expiry + insert (AD-14) |
 | `0004_get_matches.sql` | `get_matches()` — the F3 query; its signature is the N4 guarantee |
+| `0005_requests_flow.sql` | send / incoming / connections / withdraw; the only function returning `contact_handle` |
 
 Two Supabase clients rather than one because the browser stores the session in
 cookies that the server also has to read. That shared-cookie handling is the
@@ -182,6 +220,21 @@ So the full **request → accept → reveal** loop (PRD S1) can be demonstrated
 using only these two logins, with no signup required. The 30 seeded users have
 random passwords and exist as match candidates, not as logins — F5.4 only asks
 for two functional accounts.
+
+### Demo the loop in this direction
+
+1. Log in as **`test.two`** → *See your matches* → **Test One** is in the list →
+   **Connect**. The card changes to "Request sent".
+2. Log out, log in as **`test.one`** → the request is on the home screen →
+   **Accept**.
+3. **Connections** now shows Test Two's number — and test.two's Connections
+   shows test.one's.
+
+> **Direction matters, and it is not a bug.** F3.3 returns only the *top 3*, so
+> matching is asymmetric: Test One ranks 3rd for test.two, but test.two does not
+> make test.one's top 3 (three seeded users score higher). Starting from
+> `test.one` would be refused with `NOT_A_CURRENT_MATCH`, which is F4.1 working
+> — requests may only go to someone the app actually showed you.
 
 ## Seed data (PRD F5)
 

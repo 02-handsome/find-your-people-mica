@@ -3,28 +3,33 @@ import Link from "next/link";
 
 import { signOutAction } from "@/app/(app)/actions";
 import { Avatar } from "@/components/Avatar";
+import { IncomingRequestCard } from "@/components/IncomingRequestCard";
 import { IntentCard } from "@/components/IntentCard";
 import { BUTTON_PRIMARY_LINK, CARD, HINT } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { getActiveIntent } from "@/lib/intents-server";
+import { getIncomingRequests } from "@/lib/requests-server";
 
 export const metadata: Metadata = { title: "Home · Find Your People" };
 
 /**
- * Screen 4 (Home) — Phase 4 version.
+ * Screen 4 (Home) — Phase 6 version.
  *
- * Carries the intent half of the screen: the active intent card with its
- * countdown and edit/withdraw (F2.3), or a designed empty state with the way to
- * create one. Incoming requests and the link to matches are Phases 5–6 and are
- * deliberately not stubbed here.
+ * PRD section 7 lists three things here: the active intent card with countdown
+ * and edit/withdraw, incoming requests, and a link to matches. All three are
+ * present, plus a link to Connections (screen 6).
  *
- * F2's acceptance is that all four CRUD operations sit within two taps of this
- * screen: read is already on it, create is "Post an intent" then submit, update
- * is "Edit" then save, delete is "Withdraw" then confirm.
+ * Incoming requests come FIRST, above the user's own intent. They are the only
+ * thing on this screen where someone else is waiting on you, and the only one
+ * with an irreversible action attached.
  */
 export default async function HomePage() {
   // (complete)/layout.tsx has already guaranteed a complete profile.
-  const [profile, intent] = await Promise.all([getProfile(), getActiveIntent()]);
+  const [profile, intent, incoming] = await Promise.all([
+    getProfile(),
+    getActiveIntent(),
+    getIncomingRequests(),
+  ]);
   if (!profile) return null;
 
   return (
@@ -39,16 +44,24 @@ export default async function HomePage() {
         </div>
       </header>
 
-      <div className="mt-6 flex flex-wrap gap-2">
-        {profile.tags?.map((tag) => (
-          <span
-            key={tag}
-            className="rounded-full border border-neutral-200 px-3 py-1 text-sm dark:border-neutral-800"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
+      {/* F4.3 — incoming requests. Only rendered when there are any: an empty
+          "no requests" panel on every visit would be noise, and this screen
+          already has a designed empty state for the thing that matters when
+          you are new (no intent). */}
+      {incoming.length > 0 ? (
+        <section className="mt-8">
+          <h2 className="text-sm font-medium">
+            {incoming.length === 1
+              ? "1 person wants to connect"
+              : `${incoming.length} people want to connect`}
+          </h2>
+          <ul className="mt-3 space-y-4">
+            {incoming.map((request) => (
+              <IncomingRequestCard key={request.request_id} request={request} />
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <div className="mt-8">
         {intent ? (
@@ -88,7 +101,13 @@ export default async function HomePage() {
         </p>
       </section>
 
-      <div className="mt-8 flex items-center gap-5">
+      <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
+        <Link
+          href="/connections"
+          className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+        >
+          Connections
+        </Link>
         <Link
           href="/profile-setup"
           className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"

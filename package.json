@@ -10,7 +10,8 @@
     "seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed.mjs",
     "verify:seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify-seed.mjs",
     "verify:constraints": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify-constraints.mjs",
-    "verify:matches": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify-matches.mjs"
+    "verify:matches": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify-matches.mjs",
+    "verify:reveal": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify-reveal.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

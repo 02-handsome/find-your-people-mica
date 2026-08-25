@@ -136,22 +136,32 @@ export async function updateIntentAction(
   redirect("/");
 }
 
-/** PRD F2.5 — withdraw. Sets status; the row is never deleted. */
+/** PRD F2.5 — withdraw, plus OQ-1's auto-decline. */
 export async function withdrawIntentAction() {
-  const userId = await requireUserId();
+  await requireUserId();
 
   const supabase = await createClient();
 
-  await supabase
-    .from("intents")
-    .update({ status: "withdrawn" })
-    .eq("user_id", userId)
-    .eq("status", "active");
+  // Goes through withdraw_intent() rather than a plain update, because since
+  // Phase 6 this is no longer a single-row change: it also declines the pending
+  // requests sent FROM this intent, which have just lost their subject
+  // (docs/notes.md AD-23). Those two writes must be one transaction — split
+  // apart, a failure between them leaves a withdrawn intent with live requests
+  // pointing at it, and the recipient can accept a plan that no longer exists.
+  //
+  // The sender cannot write those rows directly: requests_update_recipient
+  // deliberately restricts status changes to the RECIPIENT. So this needs more
+  // privilege than the caller has, which is exactly when AD-18 says a
+  // SECURITY DEFINER function is justified.
+  const { error } = await supabase.rpc("withdraw_intent");
 
-  // Deliberately not reporting a zero-row result. The only way to match nothing
-  // is that the intent already lapsed or was withdrawn in another tab, and in
-  // both cases the user's goal — "this should not be live" — is already true.
-  // Home renders the real state either way.
+  if (error) {
+    console.error("withdraw_intent failed:", error.message);
+  }
+
+  // A zero-row outcome is not worth reporting: it means the intent already
+  // lapsed or was withdrawn in another tab, and the user's goal — "this should
+  // not be live" — is already true. Home renders the real state either way.
   revalidatePath("/", "layout");
   redirect("/");
 }
