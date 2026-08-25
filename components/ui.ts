@@ -17,6 +17,9 @@ export const BUTTON_PRIMARY =
   "transition-opacity hover:opacity-90 disabled:opacity-50 " +
   "dark:bg-neutral-100 dark:text-neutral-900";
 
+/** Same as BUTTON_PRIMARY, for an <a>/<Link> rather than a <button>. */
+export const BUTTON_PRIMARY_LINK = BUTTON_PRIMARY + " inline-block text-center";
+
 export const HINT = "text-sm text-neutral-500";
 
 export const CARD =

@@ -6,9 +6,9 @@ thing. Contact details are revealed only after both sides agree.
 
 **Live URL:** https://find-your-people-mica.vercel.app
 
-**Build status:** Phase 3 of 8 complete — schema and seed data. The database
-holds 32 users, each with one active intent. See `docs/PRD.md` section 9 for the
-full build sequence.
+**Build status:** Phase 4 of 8 complete — intent CRUD. All four operations work
+from the UI, each within two taps of the home screen. See `docs/PRD.md`
+section 9 for the full build sequence.
 
 > Opening the live URL redirects to `/login`. That is required behaviour, not a
 > fault: PRD F1.6 makes every route except login/signup private. See
@@ -103,6 +103,7 @@ idempotent, so re-running one is always safe:
 | --- | --- |
 | `0001_users.sql` | `users`, RLS, campus domain allowlist and gate |
 | `0002_intents_requests.sql` | `intents`, `requests`, enums, constraints, triggers |
+| `0003_create_intent.sql` | `create_intent()` — atomic lazy-expiry + insert (AD-14) |
 
 Two Supabase clients rather than one because the browser stores the session in
 cookies that the server also has to read. That shared-cookie handling is the

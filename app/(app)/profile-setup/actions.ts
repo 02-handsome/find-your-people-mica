@@ -48,7 +48,7 @@ export async function saveProfileAction(
   const values = { name, year, tags, contactHandle: contactRaw };
 
   // Validated here, on the server, not just in the browser. The client-side
-  // limits in TagPicker are for feedback; these are the rules.
+  // limits in ChipGroup are for feedback; these are the rules.
   if (name.length < 2) {
     return { error: "Please enter your name.", values };
   }

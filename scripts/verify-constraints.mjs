@@ -53,6 +53,7 @@ const admin = createClient(URL_, SECRET, {
 const PASSWORD = `probe-${randomUUID()}`;
 const PROBE_A = "constraint.probe.a@micamail.in";
 const PROBE_B = "constraint.probe.b@micamail.in";
+const PROBE_C = "constraint.probe.c@micamail.in";
 
 let passed = 0;
 const failures = [];
@@ -135,7 +136,7 @@ async function makeProbe(email) {
 
 async function cleanup() {
   const { data: list } = await admin.auth.admin.listUsers({ page: 1, perPage: 200 });
-  for (const email of [PROBE_A, PROBE_B]) {
+  for (const email of [PROBE_A, PROBE_B, PROBE_C]) {
     const u = list?.users?.find((x) => x.email === email);
     if (u) await admin.auth.admin.deleteUser(u.id);
   }
@@ -288,6 +289,104 @@ async function main() {
   await mustFail("B cannot revive a declined request (declined is terminal)", () =>
     B.client.from("requests").update({ status: "accepted" }).eq("id", reqId).select()
   );
+
+  // =========================================================================
+  // AD-14. This is the whole justification for migration 0003: without
+  // create_intent(), a user whose intent lapsed still occupies the
+  // one-active-intent unique slot and CANNOT post a replacement. Nothing else
+  // in the system ever transitions active -> expired.
+  // =========================================================================
+  console.log("\n════ AD-14 — a lapsed intent must not block a new one ════\n");
+
+  const C = await makeProbe(PROBE_C);
+  const nowMs = Date.now();
+
+  // Plant a lapsed row exactly as one occurs naturally: status still 'active',
+  // because expiry is evaluated on read and nothing flips it. created_at has to
+  // move back too, or intents_expiry_after_creation rejects the row.
+  const { error: plantError } = await admin.from("intents").insert({
+    user_id: C.id,
+    activity: "gym",
+    days: ["Mon", "Wed"],
+    time_start: "06:00",
+    time_end: "08:00",
+    experience_level: "regular",
+    status: "active",
+    created_at: new Date(nowMs - 10 * 86_400_000).toISOString(),
+    expires_at: new Date(nowMs - 3 * 86_400_000).toISOString(),
+  });
+
+  if (plantError) {
+    failures.push(`could not plant a lapsed intent: ${plantError.message}`);
+    console.log(`  [BROKEN]  planting a lapsed intent — ${plantError.message}`);
+  } else {
+    console.log("  [SETUP]   planted an intent: status='active', expires_at 3 days ago");
+
+    // F2.6 — the read filter alone should already hide it.
+    const { data: visible } = await C.client
+      .from("intents")
+      .select("id")
+      .eq("user_id", C.id)
+      .eq("status", "active")
+      .gt("expires_at", new Date().toISOString());
+
+    if ((visible ?? []).length === 0) {
+      passed++;
+      console.log("  [OK]      read filter hides it — home shows the empty state (F2.6)");
+    } else {
+      failures.push("lapsed intent still visible to the read filter");
+      console.log("  [BROKEN]  lapsed intent still visible to the read filter");
+    }
+
+    // The operation that would fail on the unique index without 0003.
+    const { error: rpcError } = await C.client.rpc("create_intent", {
+      p_activity: "running",
+      p_days: ["Tue", "Thu"],
+      p_time_start: "18:00",
+      p_time_end: "20:00",
+      p_experience_level: "beginner",
+    });
+
+    if (rpcError) {
+      failures.push(`create_intent over a lapsed intent failed: ${rpcError.message}`);
+      console.log(`  [BROKEN]  posting a new intent — ${rpcError.message}`);
+    } else {
+      passed++;
+      console.log("  [OK]      posting a new intent succeeds despite the lapsed row");
+    }
+
+    const { data: rows } = await admin
+      .from("intents")
+      .select("status, activity, expires_at")
+      .eq("user_id", C.id)
+      .order("created_at", { ascending: true });
+
+    const statuses = (rows ?? []).map((r) => `${r.activity}:${r.status}`);
+    const live = (rows ?? []).filter(
+      (r) => r.status === "active" && new Date(r.expires_at) > new Date()
+    );
+
+    console.log(`             rows now: ${statuses.join(", ")}`);
+
+    if (statuses.length === 2 && statuses[0] === "gym:expired" && live.length === 1) {
+      passed++;
+      console.log("  [OK]      lapsed row flipped to 'expired'; exactly one live intent");
+    } else {
+      failures.push("AD-14 cleanup did not leave exactly one live intent");
+      console.log("  [BROKEN]  expected gym:expired + one live intent");
+    }
+
+    // And the rule still holds once there IS a live intent.
+    await mustFail("posting again while one is live is still refused (F2.2)", () =>
+      C.client.rpc("create_intent", {
+        p_activity: "sport",
+        p_days: ["Sat"],
+        p_time_start: "09:00",
+        p_time_end: "11:00",
+        p_experience_level: "regular",
+      })
+    );
+  }
 
   console.log("\n════ Summary ════\n");
   console.log(`  ${passed} checks behaved correctly`);

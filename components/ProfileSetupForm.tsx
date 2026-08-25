@@ -3,12 +3,16 @@
 import { useActionState } from "react";
 
 import { saveProfileAction } from "@/app/(app)/profile-setup/actions";
+import { ChipGroup } from "@/components/ChipGroup";
 import { FormError } from "@/components/FormError";
 import { SubmitButton } from "@/components/SubmitButton";
-import { TagPicker } from "@/components/TagPicker";
-import { YearPicker } from "@/components/YearPicker";
 import { HINT, INPUT, LABEL } from "@/components/ui";
-import { TAGS_REQUIRED, type Profile } from "@/lib/profile-options";
+import {
+  TAGS,
+  TAGS_REQUIRED,
+  YEARS,
+  type Profile,
+} from "@/lib/profile-options";
 
 /**
  * Screen 2 (PRD section 7): name, year, tag picker (3), contact handle.
@@ -16,7 +20,7 @@ import { TAGS_REQUIRED, type Profile } from "@/lib/profile-options";
  * Nothing the user typed is lost when server validation rejects one field.
  * React 19 resets uncontrolled fields after a form action completes, so the
  * text inputs read `state.values` (echoed back by the action) before falling
- * back to the stored profile, and the two pickers hold their own state.
+ * back to the stored profile, and the chip groups hold their own state.
  */
 export function ProfileSetupForm({
   profile,
@@ -54,14 +58,29 @@ export function ProfileSetupForm({
 
       <div>
         <span className={LABEL}>Year</span>
-        <YearPicker initial={submitted?.year ?? profile.year ?? ""} />
+        <ChipGroup
+          name="year"
+          options={YEARS}
+          initial={
+            (submitted?.year ?? profile.year) ? [submitted?.year ?? profile.year!] : []
+          }
+          single
+          ariaLabel="Year"
+        />
       </div>
 
       <div>
         <span className={LABEL}>
           Pick {TAGS_REQUIRED} things you&rsquo;re into
         </span>
-        <TagPicker initial={submitted?.tags ?? profile.tags ?? []} />
+        <ChipGroup
+          name="tags"
+          options={TAGS}
+          initial={submitted?.tags ?? profile.tags ?? []}
+          max={TAGS_REQUIRED}
+          counter={(n) => `${n} of ${TAGS_REQUIRED} chosen`}
+          ariaLabel="Interests"
+        />
       </div>
 
       <div>

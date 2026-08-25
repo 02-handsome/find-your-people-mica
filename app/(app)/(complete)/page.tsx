@@ -3,22 +3,28 @@ import Link from "next/link";
 
 import { signOutAction } from "@/app/(app)/actions";
 import { Avatar } from "@/components/Avatar";
-import { CARD, HINT } from "@/components/ui";
+import { IntentCard } from "@/components/IntentCard";
+import { BUTTON_PRIMARY_LINK, CARD, HINT } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
+import { getActiveIntent } from "@/lib/intents-server";
 
 export const metadata: Metadata = { title: "Home · Find Your People" };
 
 /**
- * Screen 4 (Home) — Phase 2 version.
+ * Screen 4 (Home) — Phase 4 version.
  *
- * Deliberately minimal. Phase 2's bar is "can create an account and log back
- * in", so this shows enough to prove the session and the saved profile are
- * real. The active-intent card, incoming requests and the link to matches are
- * Phase 4 work (PRD section 7, screen 4) and are not stubbed out here.
+ * Carries the intent half of the screen: the active intent card with its
+ * countdown and edit/withdraw (F2.3), or a designed empty state with the way to
+ * create one. Incoming requests and the link to matches are Phases 5–6 and are
+ * deliberately not stubbed here.
+ *
+ * F2's acceptance is that all four CRUD operations sit within two taps of this
+ * screen: read is already on it, create is "Post an intent" then submit, update
+ * is "Edit" then save, delete is "Withdraw" then confirm.
  */
 export default async function HomePage() {
-  // (complete)/layout.tsx has already guaranteed this is non-null and complete.
-  const profile = await getProfile();
+  // (complete)/layout.tsx has already guaranteed a complete profile.
+  const [profile, intent] = await Promise.all([getProfile(), getActiveIntent()]);
   if (!profile) return null;
 
   return (
@@ -44,6 +50,26 @@ export default async function HomePage() {
         ))}
       </div>
 
+      <div className="mt-8">
+        {intent ? (
+          <IntentCard intent={intent} />
+        ) : (
+          /* CLAUDE.md: never a blank screen. This is the state a brand-new user
+             lands on, so it explains the product in one line rather than just
+             reporting an absence. */
+          <section className={CARD}>
+            <h2 className="text-base font-medium">No active intent</h2>
+            <p className={`mt-1 ${HINT}`}>
+              Post what you want a partner for, and you&rsquo;ll see a few
+              people who posted the same thing.
+            </p>
+            <Link href="/intent/new" className={`mt-4 ${BUTTON_PRIMARY_LINK}`}>
+              Post an intent
+            </Link>
+          </section>
+        )}
+      </div>
+
       <section className={`mt-6 ${CARD}`}>
         <h2 className="text-sm font-medium">Your contact handle</h2>
         <p className="mt-1 font-mono text-sm">{profile.contact_handle}</p>
@@ -54,10 +80,6 @@ export default async function HomePage() {
         </p>
       </section>
 
-      {/* Editing has to be reachable, not just permitted. A wrong
-          contact_handle would otherwise be revealed to every accepted match
-          forever, and neither side could tell why the number does not work.
-          See docs/notes.md AD-11. */}
       <div className="mt-8 flex items-center gap-5">
         <Link
           href="/profile-setup"

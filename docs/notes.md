@@ -596,3 +596,105 @@ the harness distinguishes three outcomes:
 The output names which layer caught each attempt, which matters because several
 are stopped by the column grant *before* the trigger ever runs. AD-10 was about
 a control that did nothing; this is about a **test** that could report nothing.
+
+---
+
+## AD-18 — AD-14 resolved: one function, one transaction, and only for create.
+
+`public.create_intent()` (migration `0003`) does the lazy cleanup and the insert
+in a single transaction:
+
+```sql
+update public.intents set status = 'expired'
+ where user_id = v_user and status = 'active' and expires_at <= now();
+-- then the F2.2 check, then the insert
+```
+
+**Why this is not the scheduled job the rule forbids.** `CLAUDE.md` says
+"expiry on read, not cron". This runs *only because a user asked to post an
+intent* — never on a timer, never on a page render. And it only marks rows
+already past their `expires_at`, so it records what is true rather than bringing
+it about, which is also the only `active → expired` move AD-16's trigger allows.
+Reads keep filtering on both columns regardless, so correctness never depends on
+the cleanup having happened.
+
+**Why the signature is the security boundary.** `SECURITY DEFINER` runs as the
+function owner, bypassing RLS *and* the column grants from AD-15. So the
+identity comes from `auth.uid()`, and **`user_id`, `status` and `expires_at` are
+not parameters**. There is no value a caller could pass to write a row for
+someone else or hand themselves a ten-year intent — the protection is preserved
+by the shape of the function rather than routed around by it. `EXECUTE` is also
+revoked from `PUBLIC` and granted only to `authenticated`.
+
+**Why only create needs a function.** Update and withdraw are plain writes
+already constrained by three independent things: the column grant (only
+`days`, `time_start`, `time_end`, `experience_level`, `status`), RLS (own row),
+and the AD-16 transition triggers. Wrapping them would add a second privileged
+path for no gain. The rule of thumb worth keeping: a `SECURITY DEFINER` function
+is justified when an operation needs *more* privilege than the caller has —
+not merely because it is important.
+
+**Two taps, counted (F2's acceptance criterion).**
+
+| Operation | Path from home | Taps |
+| --- | --- | --- |
+| Read | already on the screen | 0 |
+| Create | "Post an intent" → "Post intent" | 2 |
+| Update | "Edit" → "Save changes" | 2 |
+| Delete | "Withdraw" → "Yes, withdraw" | 2 |
+
+Withdraw uses an inline confirmation rather than `window.confirm()`, which is
+untestable, blocks the thread and looks foreign on mobile. The confirm step is
+the second tap, so the destructive action stays guarded without exceeding the
+budget.
+
+---
+
+# Open questions
+
+Decisions deliberately deferred, recorded so the phase that owns them decides
+on purpose rather than inheriting whatever happened by accident.
+
+## OQ-1 — What happens to pending requests when the intent behind them is withdrawn? (Phase 6)
+
+**The gap.** F2.5 says a withdrawn intent "disappears from all match pools
+immediately". But `requests` rows carry `intent_id`, and F4.3 says the recipient
+sees "the sender's name, avatar, tags, **and intent details**". Withdraw an
+intent with a pending request against it and the recipient is looking at a card
+describing something that no longer exists — and may accept it, revealing both
+contact handles over a plan the sender has already abandoned.
+
+The PRD does not say what should happen. Phase 4 does nothing about it: there is
+no request UI yet, and the schema supports either answer.
+
+**Leading candidate — withdrawing auto-declines pending requests, silently.**
+The sender expressed interest in something that no longer exists, so the request
+has lost its subject. F4.6 already establishes that a decline is silent to the
+sender ("the card simply returns to neutral"), so this needs no new notification
+concept — and V1 has no notifications at all. It also composes correctly with
+the rest of the model: `pending → declined` is a legal AD-16 transition, and
+F3.1 excludes only *pending or accepted* pairs, so declining frees the pair and
+both people can find each other again if the sender posts a fresh intent.
+
+**Alternatives considered.**
+
+- *Leave requests untouched* — a request is arguably about a **person**, not a
+  plan; you liked the look of someone's gym schedule, and you might still want
+  to train with them. Cheapest to build (nothing to do). Cost: the recipient
+  decides based on stale details, which is precisely the trust problem the
+  contact-reveal promise depends on.
+- *Cascade-delete the requests* — clean state, but destroys history, and
+  `requests` rows are the only record that an interaction happened. Also
+  inconsistent with how the rest of the schema treats removal: withdrawing an
+  intent sets a status rather than deleting a row, and there is no `DELETE`
+  policy on either table by design.
+- *Block withdrawal while requests are pending* — protects the recipient but
+  traps the sender in a commitment they have decided against, which inverts who
+  the feature is for.
+
+**Whichever is chosen, it belongs in the database**, in the same transaction as
+the withdrawal — otherwise a failure between the two writes leaves a withdrawn
+intent with live requests pointing at it. That means withdraw would move from a
+plain update to a `SECURITY DEFINER` function, exactly as create did in AD-18,
+and for the same reason: it would then need to write rows the caller cannot
+write directly (a request where they are `from_user_id`, not the recipient).
