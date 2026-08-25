@@ -728,6 +728,102 @@ first match list.
 
 ---
 
+## AD-20 — N4 is enforced by a function signature, not by a filter.
+
+**Decision.** The cross-user read is `public.get_matches()`, a `SECURITY DEFINER`
+function whose `RETURNS TABLE` list contains no `contact_handle` column. No
+cross-user read policy was added to `users` or `intents`; both keep their
+self-only RLS from Phase 2.
+
+**Why a signature rather than a policy.** Row Level Security filters *rows*, not
+*columns*. A policy permitting a viewer to see candidates' rows would expose
+every column of those rows, `contact_handle` included, and the protection would
+then rest on every query remembering to omit it — in the page, in any future
+API route, in anything a later phase adds. That is the failure mode AD-10
+already caught once: a control that looks like enforcement and does nothing.
+
+With a fixed output shape, leaking the column requires **adding it to the
+signature** — a visible, reviewable act — rather than forgetting a filter. The
+guarantee is checkable from the catalog without reading any application code:
+
+```sql
+select unnest(proargnames) from pg_proc where proname = 'get_matches';
+```
+
+Supporting properties: **zero parameters** (the viewer comes from `auth.uid()`,
+so there is nothing to inject and no way to aim it at another user's pool), and
+`EXECUTE` revoked from `PUBLIC` and granted only to `authenticated`.
+
+**The remaining cost, stated plainly.** `SECURITY DEFINER` means this one
+function is genuinely privileged: inside it, RLS does not apply. The whole
+security argument reduces to the correctness of one function that is 60 lines
+long and has no inputs. That is a much smaller thing to get right than every
+query in the application, which is the point — but it is not nothing, and it is
+why the function has no parameters at all.
+
+---
+
+## AD-21 — F3.4's ordering puts availability above score, deliberately.
+
+`order by relaxed asc, score desc` — not `score desc` alone.
+
+The forced F3.4 test made the difference concrete:
+
+```
+Test Two        5 days  +2 lvl  1 tag   30 min   score 20.00
+Riya Sharma     5 days  +2 lvl  2 tags   0 min   score 21.00   relaxed
+Aditya Rao      5 days  +2 lvl  2 tags   0 min   score 21.00   relaxed
+```
+
+The two relaxed candidates **score higher** than the genuine match, and are
+still ranked below it. Sorting by score alone would have put two people with
+**zero overlapping hours** at the top of the list.
+
+That is F3.4 read correctly: relaxation exists to *fill a gap*, not to compete.
+Someone you cannot actually meet is not a better match than someone you can,
+however well their tags line up. It is the same principle as AD-19 — simultaneity
+is a precondition, not a preference — expressed in the sort rather than in the
+weights.
+
+**Note also what F3.4 does not relax.** The shared-day requirement stays hard.
+Someone free on entirely different days is not a near miss; they are a different
+person's schedule.
+
+---
+
+## AD-22 — Two requirements were passing vacuously. Forced them instead.
+
+The first `verify:matches` run reported F3.4 as passing with `3 genuine, 0
+relaxed`. That is a pass in the sense that nothing was violated, and worthless
+as evidence: the seeded pool is dense enough (by design — F5.2) that relaxation
+never fires, so the code path had never executed. F3.6 was worse, because **no
+valid intent can produce an empty pool against this seed at all**.
+
+Both are graded requirements. So the suite now constructs the conditions:
+
+- **F3.4** — a probe posts gym `09:00–10:00`, which sits just past the seeded
+  morning windows (ending 08:00 / 08:30 / 09:00) and long before the evening
+  ones. It shares days with many people and overlapping *hours* with almost
+  nobody, producing 1 genuine and 2 relaxed rows.
+- **F3.6** — a probe posts a sport intent, then an open request is inserted
+  against every sport candidate, emptying the pool through F3.1's own exclusion
+  rule rather than by deleting anyone's data.
+
+Both probes are deleted afterwards; their requests cascade.
+
+**The lesson generalises past this phase.** A test that cannot fail proves
+nothing, and a *vacuous* pass is harder to spot than a missing test, because it
+appears in the output as a green line. When seed data is deliberately generous —
+and F5.2 requires exactly that — the edge cases it protects against become the
+ones nothing exercises. Worth asking of any suite: which of these checks would
+still pass if the feature were deleted?
+
+Related: the F3.4 label and F3.6 copy are now asserted against `docs/PRD.md`
+itself rather than against my transcription of it. A paraphrase would be
+invisible to every other check here.
+
+---
+
 # Open questions
 
 Decisions deliberately deferred, recorded so the phase that owns them decides

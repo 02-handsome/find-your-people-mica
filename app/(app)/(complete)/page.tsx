@@ -52,7 +52,15 @@ export default async function HomePage() {
 
       <div className="mt-8">
         {intent ? (
-          <IntentCard intent={intent} />
+          <>
+            <IntentCard intent={intent} />
+            {/* Screen 4 lists a link to matches. Only shown with a live intent,
+                because matching is relative to one — there is nothing to
+                compare against otherwise. */}
+            <Link href="/matches" className={`mt-4 ${BUTTON_PRIMARY_LINK}`}>
+              See your matches
+            </Link>
+          </>
         ) : (
           /* CLAUDE.md: never a blank screen. This is the state a brand-new user
              lands on, so it explains the product in one line rather than just

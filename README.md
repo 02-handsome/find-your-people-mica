@@ -6,9 +6,8 @@ thing. Contact details are revealed only after both sides agree.
 
 **Live URL:** https://find-your-people-mica.vercel.app
 
-**Build status:** Phase 4 of 8 complete — intent CRUD. All four operations work
-from the UI, each within two taps of the home screen. See `docs/PRD.md`
-section 9 for the full build sequence.
+**Build status:** Phase 5 of 8 complete — the ranked match list. Three filtered,
+scored results render. See `docs/PRD.md` section 9 for the full build sequence.
 
 > Opening the live URL redirects to `/login`. That is required behaviour, not a
 > fault: PRD F1.6 makes every route except login/signup private. See
@@ -80,6 +79,7 @@ components/                shared UI pieces
 lib/env.ts                 validated environment variables
 lib/auth.ts                getUserId / getProfile / requireUserId
 lib/intents.ts             intent + request vocabulary, shared with the seed
+lib/matches.ts             match candidate type — no contact_handle, by shape
 lib/profile-options.ts     years, tags, profile completeness
 lib/supabase/client.ts     Supabase client for Client Components
 lib/supabase/server.ts     Supabase client for Server Components / Actions
@@ -90,6 +90,7 @@ supabase/migrations/       schema, run in order in the SQL Editor
 scripts/seed.mjs           seed data (needs SUPABASE_SECRET_KEY)
 scripts/verify-seed.mjs    measures F5.1 / F5.2 / F5.3 / AD-9
 scripts/verify-constraints.mjs  attempts everything the schema forbids
+scripts/verify-matches.mjs      reimplements F3 independently and compares
 .github/workflows/         the daily keep-alive job
 docs/PRD.md                product requirements
 docs/notes.md              architecture decisions, with reasoning
@@ -104,6 +105,7 @@ idempotent, so re-running one is always safe:
 | `0001_users.sql` | `users`, RLS, campus domain allowlist and gate |
 | `0002_intents_requests.sql` | `intents`, `requests`, enums, constraints, triggers |
 | `0003_create_intent.sql` | `create_intent()` — atomic lazy-expiry + insert (AD-14) |
+| `0004_get_matches.sql` | `get_matches()` — the F3 query; its signature is the N4 guarantee |
 
 Two Supabase clients rather than one because the browser stores the session in
 cookies that the server also has to read. That shared-cookie handling is the
