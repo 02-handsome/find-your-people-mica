@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/seed.mjs",
+    "verify:seed": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify-seed.mjs",
+    "verify:constraints": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/verify-constraints.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.5",

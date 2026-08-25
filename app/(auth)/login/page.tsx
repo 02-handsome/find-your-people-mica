@@ -68,6 +68,13 @@ export default async function LoginPage() {
             </li>
           ))}
         </ul>
+        <p className={`mt-3 ${HINT}`}>
+          {/* Both post gym intents on overlapping weekday mornings, so they
+              appear in each other's match list. That makes the whole S1 loop
+              reachable without signing up at all. */}
+          These two match each other, so the full request → accept → reveal loop
+          can be demonstrated using only these logins — no signup needed.
+        </p>
       </section>
     </>
   );

@@ -6,9 +6,9 @@ thing. Contact details are revealed only after both sides agree.
 
 **Live URL:** https://find-your-people-mica.vercel.app
 
-**Build status:** Phase 2 of 8 complete — auth, campus email validation and
-profile setup. An account can be created and logged back into. See
-`docs/PRD.md` section 9 for the full build sequence.
+**Build status:** Phase 3 of 8 complete — schema and seed data. The database
+holds 32 users, each with one active intent. See `docs/PRD.md` section 9 for the
+full build sequence.
 
 > Opening the live URL redirects to `/login`. That is required behaviour, not a
 > fault: PRD F1.6 makes every route except login/signup private. See
@@ -75,16 +75,34 @@ error naming it, rather than an obscure network failure. That check lives in
 ## Project layout
 
 ```
-app/                    routes and layouts (App Router)
-lib/env.ts              validated environment variables
-lib/supabase/client.ts  Supabase client for Client Components
-lib/supabase/server.ts  Supabase client for Server Components / Actions
-supabase/ping.sql       keep-alive function, run once in the SQL Editor
-.github/workflows/      the daily keep-alive job
-docs/PRD.md             product requirements
-docs/notes.md           architecture decisions, with reasoning
-CLAUDE.md               working rules for this repo
+app/                       routes and layouts (App Router)
+components/                shared UI pieces
+lib/env.ts                 validated environment variables
+lib/auth.ts                getUserId / getProfile / requireUserId
+lib/intents.ts             intent + request vocabulary, shared with the seed
+lib/profile-options.ts     years, tags, profile completeness
+lib/supabase/client.ts     Supabase client for Client Components
+lib/supabase/server.ts     Supabase client for Server Components / Actions
+lib/supabase/middleware.ts token refresh helper
+middleware.ts              refreshes the auth cookie — never authorises
+supabase/ping.sql          keep-alive function, run once in the SQL Editor
+supabase/migrations/       schema, run in order in the SQL Editor
+scripts/seed.mjs           seed data (needs SUPABASE_SECRET_KEY)
+scripts/verify-seed.mjs    measures F5.1 / F5.2 / F5.3 / AD-9
+scripts/verify-constraints.mjs  attempts everything the schema forbids
+.github/workflows/         the daily keep-alive job
+docs/PRD.md                product requirements
+docs/notes.md              architecture decisions, with reasoning
+CLAUDE.md                  working rules for this repo
 ```
+
+Migrations are applied by hand in the Supabase SQL Editor, in order. Each is
+idempotent, so re-running one is always safe:
+
+| File | Contents |
+| --- | --- |
+| `0001_users.sql` | `users`, RLS, campus domain allowlist and gate |
+| `0002_intents_requests.sql` | `intents`, `requests`, enums, constraints, triggers |
 
 Two Supabase clients rather than one because the browser stores the session in
 cookies that the server also has to read. That shared-cookie handling is the
@@ -149,7 +167,57 @@ These are throwaway accounts on a demo database with Row Level Security
 enabled — signing in as one grants access to that account's own row and nothing
 else. Defined in `lib/test-accounts.ts`.
 
-_Phase 3 will add the 25–30 seeded users and their active intents (PRD F5)._
+**They match each other.** Both hold gym intents on overlapping weekday
+mornings:
+
+| Account | Intent |
+| --- | --- |
+| `test.one` | gym · Mon–Fri · 06:00–09:00 · regular |
+| `test.two` | gym · Mon–Sat · 06:00–09:30 · regular |
+
+So the full **request → accept → reveal** loop (PRD S1) can be demonstrated
+using only these two logins, with no signup required. The 30 seeded users have
+random passwords and exist as match candidates, not as logins — F5.4 only asks
+for two functional accounts.
+
+## Seed data (PRD F5)
+
+The database ships with 30 fixture users plus the two test accounts: 32 users,
+32 active intents, spread across gym / running / sport and weighted toward
+6–8am and 6–9pm.
+
+```bash
+npm run seed
+```
+
+Re-runnable and idempotent (F5.5) — running it again reuses the existing auth
+users and leaves the counts at 32/32. Requires `SUPABASE_SECRET_KEY` in
+`.env.local`; it refuses to run without one rather than falling back to the
+publishable key. See `docs/notes.md` AD-12.
+
+```bash
+npm run verify:seed
+```
+
+Measures the seeded data against F5.1 / F5.2 / F5.3 and prints the real
+numbers — a per-day grid of candidate counts for every activity and time band,
+the overlap count for each test account, and the tag-overlap spread that makes
+F3's `overlapping_tags × 2` term able to rank anything (`docs/notes.md` AD-9).
+
+**Known thin spot, by design:** every Mon–Sat cell has ≥3 candidates; **Sunday
+sits at 2**. That is where F3.4's "Close, but different hours" relaxation earns
+its place. The verification prints it rather than hiding it.
+
+```bash
+npm run verify:constraints
+```
+
+Attempts 27 operations the schema is supposed to forbid — privilege escalation,
+cross-user reads and writes, illegal status transitions, self-requests, duplicate
+requests — as a real authenticated user, and asserts each is blocked. Creates two
+throwaway probe accounts and deletes them afterwards, so seeded data is never
+touched. This exists because a column-level `GRANT` once silently did nothing and
+the escalation succeeded in production (`docs/notes.md` AD-10).
 
 ## Signing up
 

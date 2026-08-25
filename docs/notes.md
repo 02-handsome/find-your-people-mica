@@ -413,3 +413,186 @@ enforced by both the column grant and the `prevent_identity_change` trigger
 (AD-10). The distinction is the point — **identity is fixed, contact details are
 not**. Letting someone rewrite their email would walk straight out of the campus
 domain gate; letting them fix a phone number is the product working.
+
+---
+
+## AD-12 — The Supabase secret key is local-only, and the seed refuses to run without it.
+
+**Decision.** `SUPABASE_SECRET_KEY` lives in `.env.local` (gitignored, verified
+never committed), is read by `scripts/seed.mjs` alone, and is never imported by
+application code.
+
+**Why it is needed at all.** `public.users.id` foreign-keys to `auth.users(id)`,
+so a seeded user needs a real auth user. No public endpoint can create an auth
+user on someone else's behalf. The alternative — signing 32 users up through the
+normal public flow — trips Supabase's per-IP signup rate limit partway through
+and leaves the database half-seeded, which is the opposite of the re-runnable
+script F5.5 asks for.
+
+**The script hard-fails rather than falling back.** If the key is missing it
+exits non-zero with an explanation. A silent fallback to the publishable key
+would half-seed under RLS and produce a wall of confusing permission errors
+instead of one clear message. It also inspects the key it was given: a
+`sb_publishable_` value is rejected outright, and a legacy JWT is rejected
+unless its `role` claim is actually `service_role` — because prefix alone cannot
+distinguish a legacy anon key from a legacy service_role key, both of which
+begin `eyJ`.
+
+**A structural protection, not just a convention:** the variable deliberately
+has **no `NEXT_PUBLIC_` prefix**. Next.js only inlines `NEXT_PUBLIC_*` into the
+browser bundle, so even an accidental import into a Client Component yields
+`undefined` in the browser rather than shipping the key to every visitor.
+`scripts/` also sits outside `app/` and `lib/`, so nothing in the app's import
+graph reaches it.
+
+---
+
+## AD-13 — Seeded expiry is a fixture choice, not a spec deviation.
+
+**Decision.** The 30 fixture users get a far-future `expires_at`. The two
+published test accounts get exactly `now() + 7 days`, per PRD 4.2.
+
+**No code path changes.** The expiry-on-read filter
+(`status = 'active' AND expires_at > now()`) is untouched and spec-exact. Only
+the seeded *values* differ. `expires_at` is data; the 7-day rule in F2.1 governs
+what happens when a **user** creates an intent through the UI, and that is
+unchanged.
+
+**What it protects.** S2 requires that "a new user always sees at least 3
+candidate matches on first search". With spec-exact fixture expiry, every
+seeded intent lapses seven days after seeding — so if the app is opened for
+grading eight days later, the match list is empty and S2 fails **with no visible
+cause**. That is a worse outcome than fixtures having a longer horizon than real
+rows.
+
+**Why the test accounts keep the real window.** They are the accounts a grader
+actually logs into, so expiry stays demonstrable on the screens where F2.3's
+countdown appears. And it degrades gracefully: if theirs lapse, the grader posts
+a new intent and the 30-strong pool is still there.
+
+---
+
+## AD-14 — The one-active-intent rule and expiry-on-read mildly conflict.
+
+Two `CLAUDE.md` hard rules meet here:
+
+- *"One active intent per user. Enforce it."* → a partial unique index on
+  `(user_id) where status = 'active'`.
+- *"Expiry on read, not cron."* → an expired intent keeps `status = 'active'`
+  with a past `expires_at`.
+
+Together: a user whose intent lapsed **still occupies the unique slot**, so
+inserting a replacement fails. Each rule is right on its own; the gap is that
+nothing ever transitions `active → expired`.
+
+**Resolution for Phase 4.** The create-intent path first flips the caller's own
+expired-but-active rows to `'expired'`, then inserts — both inside one
+`SECURITY DEFINER` function so it is atomic. That is expiry-at-**write**, which
+is not what the rule forbids: the rule bars a **scheduled job**, and this runs
+only because a user acted. Reads keep filtering
+`status = 'active' AND expires_at > now()` regardless, so correctness never
+depends on the cleanup having happened.
+
+Phase 3 does not hit this — every seeded intent is fresh. Written down so
+Phase 4 does not rediscover it as a bug.
+
+---
+
+## AD-15 — Column-scoped INSERT, not just UPDATE.
+
+AD-10 applied *before* being bitten this time. Every grant in `0002` revokes
+first, and `INSERT` is column-scoped as well as `UPDATE`:
+
+```sql
+revoke insert, update on public.intents from authenticated;
+grant insert (user_id, activity, days, time_start, time_end, experience_level) ...
+grant update (days, time_start, time_end, experience_level, status) ...
+```
+
+**Why scoping the insert matters as much as the update:** with a table-wide
+`INSERT` grant a user could supply their own `expires_at` and hand themselves a
+ten-year intent. Restricting the column list forces `status`, `created_at` and
+`expires_at` to take their defaults. Verified by
+`npm run verify:constraints` — the attempt returns `42501`.
+
+**What is immutable on an intent, and why:** `activity` (F2.4 lists days, time
+window and experience level as editable, and not activity — changing it would
+move a user into a different match pool while their existing requests dangled)
+and `expires_at` (F2.4 is explicit that it does not reset on edit). Both are
+enforced by the grant *and* by `prevent_intent_identity_change`.
+
+---
+
+## AD-16 — An enum constrains values, not transitions.
+
+**Found by review, not by testing** — the schema was written, and the question
+"is there anything stopping a user setting an arbitrary status?" turned out to
+have the answer "no".
+
+`status` must be user-writable for withdrawal (F2.5) and accept/decline (F4.4).
+The enum type limits it to three **values**. It says nothing about **direction**.
+Before this was fixed a user could:
+
+- mark a **live** intent `expired` — a lie that removes it from match pools while
+  claiming time ran out, destroying the distinction between "the user withdrew"
+  and "it lapsed";
+- flip `withdrawn` back to `active`, so F2.5's *"withdrawn intents disappear from
+  all match pools immediately"* became a toggle rather than a commitment;
+- flip `expired` back to `active` and re-occupy the one-active slot, locking
+  **themselves** out of posting a new intent;
+- as a recipient, revive a `declined` request into `accepted` — reviving a
+  refusal the sender was never told about, since F4.6 makes declines silent;
+- or move `accepted` back, "un-revealing" a `contact_handle` the other party has
+  already seen and the data can no longer retract.
+
+Two triggers now enforce the PRD's actual state machines:
+
+```
+intents:   active ──> withdrawn   (terminal)
+             └──────> expired     (terminal, and only once expires_at has passed)
+
+requests:  pending ──> accepted   (terminal — reveals contact, F4.5)
+              └──────> declined   (terminal — silent to the sender, F4.6)
+```
+
+`active → expired` is permitted **only when `expires_at` has already passed**:
+lazy expiry may *record* what is true, never bring it about.
+
+Terminal states are also what make F3.1 coherent. It excludes only *pending or
+accepted* pairs, so after a decline the pair becomes eligible again and a fresh
+attempt is a **new row** — exactly F4.6's "the card simply returns to neutral".
+
+**Worth noting for a real deployment:** `accepted` being terminal means there is
+no un-match, and V1 has no block or report either (PRD Q2 concedes this). Both
+would be required before this went near real students.
+
+---
+
+## AD-17 — A zero-row UPDATE returns no error. Security tests must count rows.
+
+The constraint suite's first run reported a false failure: *"A (the sender)
+cannot accept its own request"* appeared **ALLOWED**. The RLS policy had worked
+perfectly — `auth.uid() = to_user_id` excluded the row, the UPDATE matched zero
+rows, and **PostgREST returned success with an empty array**.
+
+The assertion only checked whether an error came back, so a policy doing its job
+was indistinguishable from a successful write.
+
+**Why this matters more than the false alarm.** The blind spot is not
+symmetrical. It cried wolf here, but the identical logic would have shown a
+green tick for a write that silently affected zero rows when it should have
+raised — a security test that **fails open in the reporting direction** is worse
+than no test, because it manufactures confidence.
+
+Every operation in `scripts/verify-constraints.mjs` now ends in `.select()`, and
+the harness distinguishes three outcomes:
+
+| Outcome | Meaning |
+| --- | --- |
+| error returned | blocked loudly by a grant, constraint or trigger |
+| no error, 0 rows | blocked silently by RLS |
+| no error, N rows | **genuinely allowed** — a real failure |
+
+The output names which layer caught each attempt, which matters because several
+are stopped by the column grant *before* the trigger ever runs. AD-10 was about
+a control that did nothing; this is about a **test** that could report nothing.
