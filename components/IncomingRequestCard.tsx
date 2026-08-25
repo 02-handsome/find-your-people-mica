@@ -70,7 +70,7 @@ export function IncomingRequestCard({ request }: { request: IncomingRequest }) {
   return (
     <li className={CARD}>
       <div className="flex items-start gap-3">
-        <Avatar src={request.avatar_url} size={44} />
+        <Avatar src={request.avatar_url} name={request.name} size={44} />
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-semibold tracking-tight">
             {request.name}

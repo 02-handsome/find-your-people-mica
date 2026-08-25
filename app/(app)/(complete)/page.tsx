@@ -49,7 +49,7 @@ export default async function HomePage() {
   return (
     <main className="mx-auto w-full max-w-sm px-6 py-10">
       <header className="flex items-center gap-3">
-        <Avatar src={profile.avatar_url} />
+        <Avatar src={profile.avatar_url} name={profile.name} />
         <div className="min-w-0">
           <h1 className="truncate text-xl font-semibold tracking-tight">
             {profile.name}

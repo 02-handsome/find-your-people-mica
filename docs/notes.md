@@ -32,6 +32,7 @@ chose, why, and what I gave up.
 - [AD-25 — Test scripts delete only rows they created. Enforced, not remembered.](#ad-25--test-scripts-delete-only-rows-they-created-enforced-not-remembered)
 - [AD-26 — Phase 7: three silent failures, one redirect loop, and a countdown that read as a bug.](#ad-26--phase-7-three-silent-failures-one-redirect-loop-and-a-countdown-that-read-as-a-bug)
 - [AD-13 revised (Phase 7) — the published test accounts get the long horizon too.](#ad-13-revised-phase-7--the-published-test-accounts-get-the-long-horizon-too)
+- [AD-27 — The avatar fallback is the default state, not an error handler.](#ad-27--the-avatar-fallback-is-the-default-state-not-an-error-handler)
 - [OQ-1 — RESOLVED in Phase 6. See AD-23.](#oq-1--resolved-in-phase-6-see-ad-23)
 - [OQ-1 (original) — What happens to pending requests when the intent behind them is withdrawn?](#oq-1-original--what-happens-to-pending-requests-when-the-intent-behind-them-is-withdrawn)
 
@@ -1095,6 +1096,108 @@ indefinitely.** Both now expire 2027-12-31.
 Expiry is still demonstrable, just not there: `verify:constraints` plants a
 lapsed intent and proves AD-14's cleanup, and any account that posts an intent
 through the UI — including the owner's own — gets F2.1's real `now() + 7 days`.
+
+---
+
+## AD-27 — The avatar fallback is the default state, not an error handler.
+
+**Decision.** `Avatar` renders the person's initials in a neutral circle and
+positions the DiceBear `<img>` on top of them, with no background of its own.
+Success paints over the fallback. Failure paints nothing, and the layer
+underneath is already there.
+
+```
+image loads   ->  the DiceBear avatar
+image fails   ->  "RS" on a neutral circle
+src is null   ->  "RS" on a neutral circle
+```
+
+**Why this needed doing at all.** F1.4's avatar URL is written by a trigger at
+signup (`0001_users.sql`), so `avatar_url` is **never null** — which means the
+`src === null` branch this component already had was dead code for every case
+that actually occurs. The real failure is not a missing URL, it is a URL that
+does not resolve: api.dicebear.com down, blocked by a campus or corporate
+network, or rate-limiting. Every screen in the app shows between one and four
+avatars, so that failure is four empty circles on the matches list. Small, but
+it is the blank screen `CLAUDE.md` forbids, and it happens on the screens a
+grader opens.
+
+**Why not `onError`, which is the conventional answer.** Two reasons, and the
+second is the one that matters.
+
+1. React does not reliably fire `onError` for an image that **already failed
+   before hydration** — the event has come and gone by the time React attaches
+   its handler. Making it dependable needs a `useEffect` that re-checks
+   `img.complete && img.naturalWidth === 0`, and `Avatar` would have to become a
+   Client Component to hold any of it, adding JS to all six screens.
+
+2. It puts the fallback behind an **event that can fail to happen**. The layered
+   version has no such dependency: the initials are simply what is there, and a
+   successful image covers them. Nothing has to fire, nothing has to hydrate,
+   and it works with JavaScript disabled.
+
+That second point is AD-10's lesson in a much smaller key. A control that
+depends on something firing can silently not fire, and the symptom — a blank
+circle — is indistinguishable from the bug it was supposed to fix.
+
+**The one detail the whole thing turns on.** The `<img>` previously carried
+`bg-neutral-100`. A failed image still occupies its box and still paints its
+own background, so that class would have drawn an opaque circle **over** the
+initials: the fallback would exist, be correct, and never be visible. Removing
+it is what makes `alt=""` + "nothing to paint" show the layer beneath. Worth
+writing down because the code would have looked finished either way.
+
+**And `alt=""` turns out to be load-bearing twice over.** It was there for
+accessibility. Measuring the failure case showed it is also what stops the
+browser painting over the fallback. A broken image with an empty alt collapses
+to **0x0** — Chrome renders no content for it at all. The same broken image with
+`alt="Some name"` reserves **103x24** for a broken-icon glyph and the alt text:
+
+| Broken image | Rendered size | Effect on the fallback |
+| --- | --- | --- |
+| `alt=""` | 0x0 | nothing painted; the initials show |
+| `alt="Some name"` | 103x24 | a broken-icon glyph and text, drawn over the initials |
+
+So a later change that "improves accessibility" by setting `alt={name}` would
+silently break the fallback and produce a worse screen than the one it replaced.
+That is now the second reason the attribute is empty, and the reason both are
+written in the file.
+
+**`aria-hidden` moved to the wrapper.** The old comment justified `alt=""` on
+the grounds that the avatar is decorative and the name is always rendered
+beside it. That argument still holds, but the initials are now *visible text*
+duplicating that name, so hiding only the image would have a screen reader
+announce the same person twice. The whole avatar is decorative; the whole
+avatar is hidden.
+
+**`referrerPolicy="no-referrer"`.** DiceBear already receives the viewer's IP
+and the user id of everyone they are shown. There is no reason to also hand it
+the page URL.
+
+**What I did not do: drop the API and generate locally.** `@dicebear/core` plus
+one style renders the same SVG inline from the user id, with no network call and
+therefore nothing to fall back from. It is the better answer and I did not take
+it, for two reasons: it adds dependencies during the submission phase, and
+`IncomingRequestCard` is a Client Component, so importing DiceBear from `Avatar`
+would pull the generator into the browser bundle. Avoiding that means computing
+the SVG server-side and threading it through three query result types — a real
+refactor, not a Phase 8 change.
+
+**Stated plainly, because it is a genuine cost:** a third party currently learns
+the IP of every viewer and the user id of everyone they were matched with.
+Self-hosting the generation is the fix, and it is the first thing to do past V1.
+
+**Verified by attempting the failure**, per AD-10's practice. With the app
+running, every avatar `src` on the page was rewritten to a dead host and the
+initials appeared in every circle; the `<img>` elements were then removed
+outright to exercise the null branch. Nothing broken was shipped to prove it.
+
+**On the feature freeze.** Phase 7 was the freeze and this is Phase 8, so this
+change needs a reason rather than a preference. It adds no capability: F1.4
+already required a generated avatar, and this only decides what is on screen
+when the generator cannot be reached. It is the same class of work as the six
+`loading.tsx` files added in AD-26 — making an existing requirement hold when
+the network does not cooperate.
 
 # Open questions
 

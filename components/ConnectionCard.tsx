@@ -13,7 +13,7 @@ export function ConnectionCard({ connection }: { connection: Connection }) {
   return (
     <li className={CARD}>
       <div className="flex items-start gap-3">
-        <Avatar src={connection.avatar_url} size={44} />
+        <Avatar src={connection.avatar_url} name={connection.name} size={44} />
         <div className="min-w-0 flex-1">
           <h3 className="truncate font-semibold tracking-tight">
             {connection.name}

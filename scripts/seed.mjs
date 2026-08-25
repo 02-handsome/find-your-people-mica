@@ -240,8 +240,11 @@ const FIXTURES = PEOPLE.map((person, i) => {
 // EACH OTHER. That means the full request -> accept -> reveal loop (S1) can be
 // demonstrated with only these two logins and no signup at all.
 //
-// Their intents keep the real 7-day window, unlike the fixtures, so expiry
-// stays demonstrable on the accounts a grader actually logs into (AD-13).
+// Their intents get the same far-future expiry as the fixtures. AD-13
+// originally left these two on the real 7-day window so expiry stayed
+// demonstrable where a grader would see it; Phase 7 revised that, because
+// credentials printed on the login screen and in the README have to work
+// indefinitely. See docs/notes.md, "AD-13 revised".
 // ---------------------------------------------------------------------------
 const TEST_ACCOUNTS = [
   {
