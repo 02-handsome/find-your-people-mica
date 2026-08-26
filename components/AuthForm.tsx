@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { useActionState, useState } from "react";
 
 import type { AuthFormState } from "@/app/(auth)/actions";
 import { FormError } from "@/components/FormError";
@@ -12,7 +13,8 @@ import { HINT, INPUT, LABEL } from "@/components/ui";
  * their labels, so they share one component rather than drifting apart.
  *
  * Uses a form action rather than an onSubmit handler, so it still submits if
- * client JS hasn't loaded.
+ * client JS hasn't loaded. The password reveal is the one thing here that
+ * needs JS, and it degrades to a normal password field without it.
  */
 export function AuthForm({
   action,
@@ -20,25 +22,26 @@ export function AuthForm({
   pendingLabel,
   autoCompletePassword,
   passwordHint,
+  footer,
 }: {
-  action: (
-    state: AuthFormState,
-    formData: FormData
-  ) => Promise<AuthFormState>;
+  action: (state: AuthFormState, formData: FormData) => Promise<AuthFormState>;
   submitLabel: string;
   pendingLabel: string;
   autoCompletePassword: "current-password" | "new-password";
   passwordHint?: string;
+  /** Rendered between the fields and the submit button. */
+  footer?: React.ReactNode;
 }) {
   const [state, formAction] = useActionState(action, { error: null });
+  const [revealed, setRevealed] = useState(false);
 
   return (
-    <form action={formAction} className="space-y-4">
+    <form action={formAction} className="flex flex-col gap-3">
       <FormError message={state.error} />
 
       <div>
         <label className={LABEL} htmlFor="email">
-          College email
+          University email
         </label>
         <input
           id="email"
@@ -63,20 +66,42 @@ export function AuthForm({
         <label className={LABEL} htmlFor="password">
           Password
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          autoComplete={autoCompletePassword}
-          className={INPUT}
-        />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={revealed ? "text" : "password"}
+            required
+            autoComplete={autoCompletePassword}
+            className={`${INPUT} pr-12`}
+          />
+          <button
+            type="button"
+            onClick={() => setRevealed((v) => !v)}
+            // The label states the ACTION, and it changes with the state —
+            // unlike the theme toggle, this control knows which state it is in
+            // at render time, so it can say so.
+            aria-label={revealed ? "Hide password" : "Show password"}
+            aria-pressed={revealed}
+            className="absolute inset-y-0 right-0 grid w-12 place-items-center text-muted-foreground transition-colors hover:text-foreground"
+          >
+            {revealed ? (
+              <EyeOff aria-hidden className="size-5" strokeWidth={1.75} />
+            ) : (
+              <Eye aria-hidden className="size-5" strokeWidth={1.75} />
+            )}
+          </button>
+        </div>
         {passwordHint ? (
           <p className={`mt-1.5 ${HINT}`}>{passwordHint}</p>
         ) : null}
       </div>
 
-      <SubmitButton pendingLabel={pendingLabel}>{submitLabel}</SubmitButton>
+      {footer}
+
+      <div className="mt-1">
+        <SubmitButton pendingLabel={pendingLabel}>{submitLabel}</SubmitButton>
+      </div>
     </form>
   );
 }

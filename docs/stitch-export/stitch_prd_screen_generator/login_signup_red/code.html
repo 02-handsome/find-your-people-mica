@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en" style=""><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Login - Find Your People</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "background": "#f9f9f9",
+                "secondary-fixed-dim": "#c6c6c9",
+                "on-tertiary-fixed": "#1a1c1c",
+                "tertiary-fixed": "#e2e2e2",
+                "on-primary-fixed": "#410003",
+                "on-error": "#ffffff",
+                "inverse-primary": "#ffb3ac",
+                "on-secondary-container": "#636467",
+                "surface-bright": "#f9f9f9",
+                "text-main": "#1A1C1E",
+                "on-primary-fixed-variant": "#930010",
+                "on-surface-variant": "#5b403d",
+                "surface-tint": "#ba1a20",
+                "surface-container-lowest": "#ffffff",
+                "outline-variant": "#e4beba",
+                "surface-variant": "#e2e2e2",
+                "primary-fixed-dim": "#ffb3ac",
+                "on-secondary-fixed": "#1a1c1e",
+                "surface-container": "#eeeeee",
+                "tertiary": "#565858",
+                "surface-container-high": "#e8e8e8",
+                "surface": "#f9f9f9",
+                "text-muted": "#616161",
+                "on-tertiary-fixed-variant": "#454747",
+                "surface-container-low": "#f3f3f4",
+                "error-container": "#ffdad6",
+                "on-tertiary": "#ffffff",
+                "tertiary-container": "#6e7070",
+                "inverse-on-surface": "#f0f1f1",
+                "on-error-container": "#93000a",
+                "on-surface": "#1a1c1c",
+                "primary": "#af101a",
+                "primary-fixed": "#ffdad6",
+                "error-vibrant": "#B71C1C",
+                "secondary-fixed": "#e2e2e5",
+                "on-secondary-fixed-variant": "#454749",
+                "on-primary": "#ffffff",
+                "outline": "#8f6f6c",
+                "border-subtle": "#E0E0E0",
+                "surface-container-highest": "#e2e2e2",
+                "inverse-surface": "#2f3131",
+                "error": "#ba1a1a",
+                "on-background": "#1a1c1c",
+                "on-primary-container": "#fff2f0",
+                "surface-dim": "#F1F1F1",
+                "secondary-container": "#e2e2e5",
+                "tertiary-fixed-dim": "#c6c6c7",
+                "primary-container": "#d32f2f",
+                "on-secondary": "#ffffff",
+                "on-tertiary-container": "#f4f4f4",
+                "secondary": "#5d5e61"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "gutter-md": "16px",
+                "card-gap": "16px",
+                "stack-sm": "12px",
+                "stack-md": "24px",
+                "base": "8px",
+                "container-padding": "20px"
+        },
+        "fontFamily": {
+                "body-sm": [
+                        "Inter"
+                ],
+                "label-caps": [
+                        "JetBrains Mono"
+                ],
+                "headline-lg": [
+                        "Hanken Grotesk"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Hanken Grotesk"
+                ],
+                "button-text": [
+                        "Hanken Grotesk"
+                ],
+                "headline-md": [
+                        "Hanken Grotesk"
+                ]
+        },
+        "fontSize": {
+                "body-sm": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-caps": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg": [
+                        "28px",
+                        {
+                                "lineHeight": "34px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "30px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "button-text": [
+                        "16px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "22px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined[data-weight="fill"] {
+            font-variation-settings: 'FILL' 1;
+        }
+        
+        /* Custom styles to hide default scrollbar but keep functionality if needed */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface antialiased min-h-screen flex flex-col items-center justify-center font-body-lg overflow-x-hidden selection:bg-primary-fixed selection:text-on-primary-fixed relative">
+<!-- Mouse Tracking Trailer -->
+<div class="fixed w-[60px] h-[60px] rounded-full pointer-events-none z-50 opacity-0 transition-opacity duration-300 motion-reduce:hidden" id="mouse-trailer" style="background: radial-gradient(circle, rgba(211,47,47,0.15) 0%, rgba(211,47,47,0) 70%); top: 0; left: 0; transform: translate(-50%, -50%);"></div>
+<main class="w-full max-w-md mx-auto px-container-padding py-stack-md flex flex-col relative z-10 min-h-screen">
+<!-- Header / Branding -->
+<header class="flex flex-col items-center justify-center mt-8 mb-stack-md text-center">
+<div class="flex justify-center w-full mb-stack-md"><img alt="Find Your People Illustration" class="h-[150px] w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBn-_umeG7TDvnShymcabQXv51o67ipBkjHVglHkZXcUKNOj4dBvzKeJdI9tH_9yI38P8FxgKd-uB1fsVO7vw2Afbvl2cTmR80AQzQIOzJEf-ZuawmZHm52HEt8unGUmMgQ405vPrT1vR_zD_onJ0H1-nFqmvO5hT8gCDIPtHfJSJiO9TOc7qkuOMXTc8o3l4i3OXBCvbq-EKsZKlb7DeQCBqA0rQbbZpDMXnegsjjsXbu1dSnFdFd3852EWvRiJHte9Yk"/></div>
+<h1 class="font-headline-lg text-headline-lg text-primary">Find Your People</h1>
+<p class="font-body-sm text-body-sm text-text-muted mt-2 max-w-[280px]">Connect with students who share your interests and schedule.</p>
+</header>
+<!-- Campus Notice -->
+<div class="bg-primary-fixed border border-primary-fixed-dim rounded-lg p-stack-sm mb-stack-md flex items-start gap-3 shadow-sm">
+<span class="material-symbols-outlined text-on-primary-fixed shrink-0" data-icon="info" data-weight="fill">info</span>
+<p class="font-body-sm text-body-sm text-on-primary-fixed">Find Your People is currently only open to <strong>Stanford University</strong> students.</p>
+</div>
+<!-- Auth Toggle -->
+<div class="flex bg-surface-container-high rounded-full p-1 mb-stack-md">
+<button class="flex-1 py-2 text-center rounded-full bg-surface-container-lowest shadow-sm font-button-text text-button-text text-on-surface transition-all duration-200" id="toggle-login">Log In</button>
+<button class="flex-1 py-2 text-center rounded-full font-button-text text-button-text text-text-muted hover:text-on-surface transition-all duration-200" id="toggle-signup">Sign Up</button>
+</div>
+<!-- Form Container -->
+<div class="bg-surface-container-lowest rounded-xl p-stack-md shadow-[0px_4px_12px_rgba(0,0,0,0.05)] border border-border-subtle relative overflow-hidden">
+<!-- Login Form -->
+<form class="flex flex-col gap-stack-sm transition-opacity duration-300" id="form-login">
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase" for="email-login">University Email</label>
+<input class="w-full h-12 px-4 rounded-lg bg-surface border border-border-subtle focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-lg text-body-lg text-on-surface placeholder-text-muted" id="email-login" placeholder="name@stanford.edu" type="email" value="test1@campus.edu"/>
+</div>
+<div class="flex flex-col gap-1">
+<div class="flex justify-between items-center">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase" for="password-login">Password</label>
+<a class="font-body-sm text-body-sm text-primary hover:underline" href="#">Forgot?</a>
+</div>
+<div class="relative">
+<input class="w-full h-12 px-4 rounded-lg bg-surface border border-border-subtle focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-lg text-body-lg text-on-surface pr-10" id="password-login" placeholder="••••••••" type="password" value="password123"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-on-surface" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+</div>
+<div class="bg-surface-container border border-border-subtle rounded-lg p-3 mt-2 flex flex-col gap-1 text-center">
+<span class="font-label-caps text-label-caps text-text-muted uppercase">Test Credentials</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant font-mono">test1@campus.edu / password123</span>
+</div>
+<button class="w-full h-12 mt-4 bg-primary hover:bg-surface-tint text-on-primary rounded-lg font-button-text text-button-text shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98]" type="submit">
+                    Log In
+                </button>
+</form>
+<!-- Signup Form (Initially Hidden) -->
+<form class="hidden flex-col gap-stack-sm opacity-0 absolute top-0 left-0 w-full h-full p-stack-md pointer-events-none bg-surface-container-lowest z-10 transition-opacity duration-300" id="form-signup">
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase" for="name-signup">Full Name</label>
+<input class="w-full h-12 px-4 rounded-lg bg-surface border border-border-subtle focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-lg text-body-lg text-on-surface placeholder-text-muted" id="name-signup" placeholder="Jane Doe" type="text"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase" for="email-signup">University Email</label>
+<input class="w-full h-12 px-4 rounded-lg bg-surface border border-border-subtle focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-lg text-body-lg text-on-surface placeholder-text-muted" id="email-signup" placeholder="name@stanford.edu" type="email"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase" for="password-signup">Create Password</label>
+<div class="relative">
+<input class="w-full h-12 px-4 rounded-lg bg-surface border border-border-subtle focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all font-body-lg text-body-lg text-on-surface pr-10" id="password-signup" placeholder="••••••••" type="password"/>
+<button class="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-on-surface" type="button">
+<span class="material-symbols-outlined" data-icon="visibility">visibility</span>
+</button>
+</div>
+<p class="font-body-sm text-[12px] text-text-muted mt-1">Must be at least 8 characters.</p>
+</div>
+<button class="w-full h-12 mt-4 bg-primary hover:bg-surface-tint text-on-primary rounded-lg font-button-text text-button-text shadow-md hover:shadow-lg transition-all duration-200 active:scale-[0.98]" type="submit">
+                    Create Account
+                </button>
+</form>
+</div>
+<div class="mt-auto pt-stack-md pb-8 text-center">
+<p class="font-body-sm text-[12px] text-text-muted">By continuing, you agree to our <a class="underline hover:text-on-surface" href="#">Terms of Service</a> and <a class="underline hover:text-on-surface" href="#">Privacy Policy</a>.</p>
+</div>
+</main>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const toggleLogin = document.getElementById('toggle-login');
+            const toggleSignup = document.getElementById('toggle-signup');
+            const formLogin = document.getElementById('form-login');
+            const formSignup = document.getElementById('form-signup');
+            
+            const activeToggleClass = ['bg-surface-container-lowest', 'shadow-sm', 'text-on-surface'];
+            const inactiveToggleClass = ['text-text-muted', 'hover:text-on-surface', 'bg-transparent', 'shadow-none'];
+
+            function switchTab(isLogin) {
+                if (isLogin) {
+                    // Update toggles
+                    toggleLogin.classList.add(...activeToggleClass);
+                    toggleLogin.classList.remove(...inactiveToggleClass);
+                    toggleSignup.classList.add(...inactiveToggleClass);
+                    toggleSignup.classList.remove(...activeToggleClass);
+                    
+                    // Animate forms
+                    formSignup.classList.remove('opacity-100');
+                    formSignup.classList.add('opacity-0');
+                    
+                    setTimeout(() => {
+                        formSignup.classList.add('hidden', 'pointer-events-none');
+                        formSignup.classList.remove('relative');
+                        formSignup.classList.add('absolute');
+                        
+                        formLogin.classList.remove('hidden', 'absolute', 'pointer-events-none');
+                        formLogin.classList.add('relative');
+                        
+                        // Small delay before fading in
+                        setTimeout(() => {
+                            formLogin.classList.remove('opacity-0');
+                            formLogin.classList.add('opacity-100');
+                        }, 50);
+                    }, 300);
+                    
+                } else {
+                    // Update toggles
+                    toggleSignup.classList.add(...activeToggleClass);
+                    toggleSignup.classList.remove(...inactiveToggleClass);
+                    toggleLogin.classList.add(...inactiveToggleClass);
+                    toggleLogin.classList.remove(...activeToggleClass);
+                    
+                    // Animate forms
+                    formLogin.classList.remove('opacity-100');
+                    formLogin.classList.add('opacity-0');
+                    
+                    setTimeout(() => {
+                        formLogin.classList.add('hidden', 'pointer-events-none');
+                        formLogin.classList.remove('relative');
+                        formLogin.classList.add('absolute');
+                        
+                        formSignup.classList.remove('hidden', 'absolute', 'pointer-events-none');
+                        formSignup.classList.add('relative');
+                        
+                        // Small delay before fading in
+                        setTimeout(() => {
+                            formSignup.classList.remove('opacity-0');
+                            formSignup.classList.add('opacity-100');
+                        }, 50);
+                    }, 300);
+                }
+            }
+
+            toggleLogin.addEventListener('click', () => switchTab(true));
+            toggleSignup.addEventListener('click', () => switchTab(false));
+            
+            // Password visibility toggle
+            document.querySelectorAll('button[type="button"]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const input = e.currentTarget.previousElementSibling;
+                    const icon = e.currentTarget.querySelector('span');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.textContent = 'visibility_off';
+                        icon.setAttribute('data-icon', 'visibility_off');
+                    } else {
+                        input.type = 'password';
+                        icon.textContent = 'visibility';
+                        icon.setAttribute('data-icon', 'visibility');
+                    }
+                });
+            });
+            
+            // Mouse Trailer Script
+            const trailer = document.getElementById('mouse-trailer');
+            
+            if (window.matchMedia('(prefers-reduced-motion: no-preference)').matches) {
+                let mouseX = 0, mouseY = 0;
+                let trailerX = 0, trailerY = 0;
+                let isMouseActive = false;
+                let animationFrameId;
+
+                const updateTrailerPosition = () => {
+                    // Easing factor
+                    const dx = mouseX - trailerX;
+                    const dy = mouseY - trailerY;
+                    trailerX += dx * 0.15;
+                    trailerY += dy * 0.15;
+
+                    trailer.style.transform = `translate(calc(${trailerX}px - 50%), calc(${trailerY}px - 50%))`;
+                    
+                    animationFrameId = requestAnimationFrame(updateTrailerPosition);
+                };
+
+                window.addEventListener('mousemove', (e) => {
+                    mouseX = e.clientX;
+                    mouseY = e.clientY;
+                    
+                    if (!isMouseActive) {
+                        isMouseActive = true;
+                        trailer.classList.remove('opacity-0');
+                        trailer.classList.add('opacity-100');
+                        // Initialize position immediately on first move
+                        if (trailerX === 0 && trailerY === 0) {
+                            trailerX = mouseX;
+                            trailerY = mouseY;
+                        }
+                        updateTrailerPosition();
+                    }
+                });
+
+                window.addEventListener('mouseout', () => {
+                    isMouseActive = false;
+                    trailer.classList.remove('opacity-100');
+                    trailer.classList.add('opacity-0');
+                    cancelAnimationFrame(animationFrameId);
+                });
+            }
+        });
+    </script>
+</body></html>

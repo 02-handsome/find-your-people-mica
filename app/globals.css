@@ -8,7 +8,7 @@
    shadcn's init wrote `@custom-variant dark (&:is(.dark *))` — pure class
    based, which silently killed every dark: utility in an app that has no
    .dark class (AD-28). The fix then was to restate it as the media query.
-   Adding a toggle means it now has to be both:
+   The toggle means it now has to be both:
 
      no data-theme        -> follow prefers-color-scheme  (unchanged default)
      data-theme="light"   -> force light, even if the OS is dark
@@ -19,8 +19,7 @@
    specificity so a utility's own weight is unchanged.
 
    Both arms match the scope element AND its descendants, so data-theme works
-   on any element, not only <html>. That is what makes a page able to show
-   both themes side by side. See docs/notes.md AD-29.
+   on any element, not only <html>. See docs/notes.md AD-29.
    =========================================================================== */
 @custom-variant dark {
   @media (prefers-color-scheme: dark) {
@@ -34,66 +33,76 @@
 }
 
 /* ===========================================================================
-   Palette — Astryx "matcha" (Meta's open-source design system, MIT).
-   Colours only. The theme's typography (Playwrite US Trad / DM Sans) and its
-   radii are deliberately NOT adopted; Geist and the existing radii stay.
+   Palette — "Vibrant Connection", the Google Stitch export.
+   Source of truth: docs/stitch-export/.../vibrant_connection/DESIGN.md
 
-   Extracted by hand from @astryxdesign/theme-matcha rather than installed:
-   the generated theme file imports @astryxdesign/core, and pulling that in
-   would mean adopting the component library. See docs/notes.md AD-28.
+   LIGHT is their Material 3 token set, used verbatim. Not one value was
+   adjusted: all twelve text/background pairings clear 4.5:1 as shipped.
 
-   Each theme block below is COMPLETE — every token restated, including the
-   ones derived with var(). That is not redundancy. Custom properties inherit
-   as computed values, so a block that omitted `--card-foreground:
-   var(--foreground)` would leave a nested scope inheriting the OTHER theme's
-   resolved hex while its own --foreground had already changed.
+   DARK is derived from the inverse-* and *-fixed tokens in the same set,
+   which is what those tokens are for — not invented. The M3 inversion is
+   literal: light-mode `on-surface` becomes the dark page, `inverse-surface`
+   becomes the dark card, `inverse-primary` becomes the dark accent.
 
-   The dark declarations appear twice, once per arm, and the two must stay
-   identical. Nothing enforces that but a diff.
+   Both themes measured; every pairing passes. That is a real improvement on
+   the palette this replaces, where Astryx's --color-text-secondary had to be
+   darkened by hand to clear the floor (AD-28), and where accent and text were
+   the SAME hex — the defect behind two separate workarounds. Here the accent
+   is a red that nothing else in the palette resembles.
+
+   Each theme block is COMPLETE — every token restated, including the ones
+   derived with var(). Custom properties inherit as computed values, so a
+   block that omitted one would leave a nested scope holding the other
+   theme's resolved hex (AD-29).
+
+   The dark declarations appear twice, once per arm, and must stay identical.
    =========================================================================== */
 
 :root,
 [data-theme="light"] {
   color-scheme: light;
 
-  /* the six ---------------------------------------------------------------- */
-  --background: #f0f0e0; /* body     — Astryx --color-background-body   */
-  --card: #ffffff; /* surface  — Astryx --color-background-card   */
-  --foreground: #3e481d; /* text     — Astryx --color-text-primary      */
-  --muted-foreground: #626e3d; /* muted    — see note below                   */
-  --primary: #3e481d; /* accent   — Astryx --color-accent            */
-  --border: #dce3ce; /* border   — Astryx --color-border            */
+  --background: #f9f9f9; /* surface / background          */
+  --card: #ffffff; /* surface-container-lowest      */
+  --foreground: #1a1c1e; /* text-main                     */
+  --muted-foreground: #616161; /* text-muted                    */
+  --primary: #af101a; /* primary                       */
+  --primary-foreground: #ffffff; /* on-primary                    */
+  --border: #e0e0e0; /* border-subtle                 */
 
-  /* NOTE on --muted-foreground. Astryx's --color-text-secondary is #707E46,
-     which measures 3.83:1 on the body background and 4.41:1 on a card — under
-     the 4.5:1 floor for body text on BOTH surfaces. It is used here for the
-     expiry countdown, the contact-privacy line and the PRD's empty-state copy,
-     none of which are decorative. Darkened to #626E3D, the smallest step that
-     clears 4.5:1 on both. Same hue, same family, legible. */
-
-  /* derived ---------------------------------------------------------------- */
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary-foreground: #ffffff; /* Astryx --color-on-accent */
-  --secondary: #e7ebda;
-  --secondary-foreground: var(--foreground);
-  --muted: #e7ebda;
-  --accent: #e7ebda; /* shadcn's "accent" is a hover surface, not the brand accent */
+  --secondary: #eeeeee; /* surface-container — chips     */
+  --secondary-foreground: var(--muted-foreground);
+  --muted: #f3f3f4; /* surface-container-low — hover */
+  --accent: #eeeeee;
   --accent-foreground: var(--foreground);
-  --input: #b7c29e; /* Astryx --color-border-emphasized */
-  --ring: #707e46;
-  --skeleton: #c0cba9; /* Astryx --color-skeleton */
+  --input: #e0e0e0;
+  --ring: var(--primary);
+  --skeleton: #e2e2e2; /* surface-variant               */
 
-  /* Kept red, and only ever for form errors. Astryx's --color-error is
-     #FD0000, which is too hot to read as text; this is its --color-text-red. */
-  --destructive: #cc0000;
-  --destructive-surface: #fbeaea;
+  --destructive: #ba1a1a; /* error                         */
+  --destructive-surface: #ffdad6; /* error-container               */
 
-  /* Login backdrop. Pools of LIGHT — see the .auth-backdrop note below. */
-  --blob-a: rgba(255, 255, 255, 0.6);
-  --blob-b: rgba(255, 255, 255, 0.9);
-  --blob-c: rgba(255, 255, 255, 0.4);
+  /* The campus notice, and any other "read this" panel. */
+  --notice: #ffdad6; /* primary-fixed                 */
+  --notice-border: #ffb3ac; /* primary-fixed-dim             */
+  --notice-foreground: #410003; /* on-primary-fixed              */
+
+  /* Uppercase monospace field labels. A maroon-grey, not the body grey — it
+     is what ties the form to the red without shouting. */
+  --label: #5b403d; /* on-surface-variant            */
+
+  /* Track behind the Log In / Sign Up segmented control. */
+  --track: #e8e8e8; /* surface-container-high        */
+
+  /* DESIGN.md: depth is functional, not skeuomorphic. Only primary buttons
+     and white cards get one. */
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
+  --shadow-primary: 0 2px 8px rgba(211, 47, 47, 0.15);
+
+  --radius: 0.5rem;
 }
 
 /* Dark, arm 1 of 2 — the OS asked for it and the user has not overridden. */
@@ -101,32 +110,41 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --background: #12140e;
-    --card: #1e2016;
-    --foreground: #c0cba9;
-    --muted-foreground: #94a468;
-    --primary: #c0cba9;
-    --border: #c0cba91a;
+    --background: #1a1c1c; /* on-surface, inverted to a page   */
+    --card: #2f3131; /* inverse-surface                  */
+    --foreground: #f0f1f1; /* inverse-on-surface               */
+    --muted-foreground: #c6c6c9; /* secondary-fixed-dim              */
+    --primary: #ffb3ac; /* inverse-primary                  */
+    --primary-foreground: #410003; /* on-primary-fixed                 */
+    --border: #454747; /* on-tertiary-fixed-variant        */
 
     --card-foreground: var(--foreground);
     --popover: var(--card);
     --popover-foreground: var(--foreground);
-    --primary-foreground: #3e481d;
-    --secondary: #262a1c;
-    --secondary-foreground: var(--foreground);
-    --muted: #262a1c;
-    --accent: #262a1c;
+    --secondary: #454747;
+    --secondary-foreground: var(--muted-foreground);
+    --muted: #3a3c3c;
+    --accent: #454747;
     --accent-foreground: var(--foreground);
-    --input: #5a6440;
-    --ring: #94a468;
-    --skeleton: #5a6440;
+    --input: #5d5e61; /* secondary                        */
+    --ring: var(--primary);
+    --skeleton: #454747;
 
-    --destructive: #ff5c5c;
-    --destructive-surface: #2a1414;
+    --destructive: #ffdad6; /* error-container, as text         */
+    --destructive-surface: #93000a; /* on-error-container, as surface   */
 
-    --blob-a: rgba(112, 126, 70, 0.28);
-    --blob-b: rgba(62, 72, 29, 0.55);
-    --blob-c: rgba(192, 203, 169, 0.07);
+    --notice: #930010; /* on-primary-fixed-variant         */
+    --notice-border: #af101a;
+    --notice-foreground: #ffdad6; /* primary-fixed                    */
+
+    --label: #e4beba; /* outline-variant                  */
+
+    --track: #454747;
+
+    /* A drop shadow on a dark ground reads as dirt. Depth comes from the
+       card being lighter than the page instead. */
+    --shadow-card: none;
+    --shadow-primary: none;
   }
 }
 
@@ -134,32 +152,39 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  --background: #12140e;
-  --card: #1e2016;
-  --foreground: #c0cba9;
-  --muted-foreground: #94a468;
-  --primary: #c0cba9;
-  --border: #c0cba91a;
+  --background: #1a1c1c;
+  --card: #2f3131;
+  --foreground: #f0f1f1;
+  --muted-foreground: #c6c6c9;
+  --primary: #ffb3ac;
+  --primary-foreground: #410003;
+  --border: #454747;
 
   --card-foreground: var(--foreground);
   --popover: var(--card);
   --popover-foreground: var(--foreground);
-  --primary-foreground: #3e481d;
-  --secondary: #262a1c;
-  --secondary-foreground: var(--foreground);
-  --muted: #262a1c;
-  --accent: #262a1c;
+  --secondary: #454747;
+  --secondary-foreground: var(--muted-foreground);
+  --muted: #3a3c3c;
+  --accent: #454747;
   --accent-foreground: var(--foreground);
-  --input: #5a6440;
-  --ring: #94a468;
-  --skeleton: #5a6440;
+  --input: #5d5e61;
+  --ring: var(--primary);
+  --skeleton: #454747;
 
-  --destructive: #ff5c5c;
-  --destructive-surface: #2a1414;
+  --destructive: #ffdad6;
+  --destructive-surface: #93000a;
 
-  --blob-a: rgba(112, 126, 70, 0.28);
-  --blob-b: rgba(62, 72, 29, 0.55);
-  --blob-c: rgba(192, 203, 169, 0.07);
+  --notice: #930010;
+  --notice-border: #af101a;
+  --notice-foreground: #ffdad6;
+
+  --label: #e4beba;
+
+  --track: #454747;
+
+  --shadow-card: none;
+  --shadow-primary: none;
 }
 
 @theme inline {
@@ -183,6 +208,11 @@
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-skeleton: var(--skeleton);
+  --color-notice: var(--notice);
+  --color-notice-border: var(--notice-border);
+  --color-notice-foreground: var(--notice-foreground);
+  --color-label: var(--label);
+  --color-track: var(--track);
 
   /* Restores the Geist wiring. shadcn's init overwrote this with
      `--font-sans: var(--font-sans)`, a self-reference that resolves to
@@ -198,10 +228,6 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-:root {
-  --radius: 0.5rem;
-}
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -212,6 +238,20 @@
   html {
     @apply font-sans;
   }
+}
+
+/* Stitch's `label-caps`: JetBrains Mono 12/16, 600, +0.05em, uppercase.
+   Rendered in the SYSTEM monospace stack rather than the real face — a third
+   webfont costs more against PRD N5 (under 3s on mobile data) than exact
+   letterforms are worth on a field label. */
+.label-caps {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", monospace;
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 /* The reveal (F4.5). One animation in the whole app, on the one moment the
@@ -236,36 +276,4 @@
   .animate-reveal {
     animation: none;
   }
-}
-
-/* ===========================================================================
-   Login / signup backdrop — large soft radial blobs.
-
-   Applied to those two screens only, via app/(auth)/layout.tsx. Pure CSS, no
-   image, no dependency. The geometry is written once here; only the three
-   colours change with the theme, so they live in the palette blocks above and
-   cannot drift out of step with the toggle.
-
-   In BOTH modes the blobs lighten the base, which is what makes them safe:
-
-   - Dark  — matcha greens over #12140e. Sampling the real gradient falloff on
-     a 201x201 grid, the darkest-contrast point is a blob centre at #2c321e,
-     where the 14px muted text still measures 4.92:1. (An earlier estimate of
-     3.65:1 "where two blobs overlap" was wrong: it stacked the layers at full
-     alpha, but a radial-gradient fades to zero at its stop, so a geometric
-     overlap is precisely where both layers are nearly transparent.)
-
-   - Light — white over #F0F0E0. Cream leaves almost no headroom: muted text is
-     only 4.78:1 on the flat background, so ANY darkening tint drops it below
-     4.5. Lightening instead means the worst case on the whole surface IS the
-     flat background. The pattern cannot cost contrast here, by construction.
-
-   See docs/notes.md AD-28.
-   =========================================================================== */
-.auth-backdrop {
-  background-color: var(--background);
-  background-image:
-    radial-gradient(70% 55% at 18% 12%, var(--blob-a), transparent 70%),
-    radial-gradient(60% 50% at 88% 28%, var(--blob-b), transparent 72%),
-    radial-gradient(80% 60% at 50% 100%, var(--blob-c), transparent 70%);
 }
