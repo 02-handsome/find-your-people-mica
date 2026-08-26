@@ -447,6 +447,7 @@ collected in one place so none of them has to be discovered.
 | Keep-alive | GitHub disables scheduled workflows in public repos after 60 days with no commits, and the job's own runs do not count | See Keep-alive above. GitHub emails first and re-enabling is one click. Never fires during active development; can after submission |
 | Outcomes are invisible | Contact hands off to WhatsApp, so the product cannot see whether a partnership actually formed | PRD Q4. The correct V1 trade and a real long-term cost — it is also why AD-19's weighting is untestable in V1 |
 | Avatars | Every render tells api.dicebear.com the viewer's IP and the user id of everyone they were shown | AD-27. Generating the SVG locally is the fix, and the first thing to do past V1 |
+| Theme toggle | Two-state. Once you pick light or dark there is no way back to "follow my system" short of clearing site data | AD-29. Accepted: anyone who never taps it keeps system-following. The CSS already treats an absent cookie as "follow the OS", so the three-state version is a change to the button alone |
 
 ---
 

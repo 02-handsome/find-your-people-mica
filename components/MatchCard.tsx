@@ -125,7 +125,7 @@ export function MatchCard({
                     "rounded-full px-2 py-0.5 text-xs " +
                     (on
                       ? "bg-primary text-primary-foreground"
-                      : "border border-border text-muted-foreground/60")
+                      : "border border-border text-muted-foreground")
                   }
                 >
                   {day}

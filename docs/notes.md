@@ -34,6 +34,7 @@ chose, why, and what I gave up.
 - [AD-13 revised (Phase 7) — the published test accounts get the long horizon too.](#ad-13-revised-phase-7--the-published-test-accounts-get-the-long-horizon-too)
 - [AD-27 — The avatar fallback is the default state, not an error handler.](#ad-27--the-avatar-fallback-is-the-default-state-not-an-error-handler)
 - [AD-28 — Visual pass: a borrowed palette, a borrowed grid, and one moment allowed to be loud.](#ad-28--visual-pass-a-borrowed-palette-a-borrowed-grid-and-one-moment-allowed-to-be-loud)
+- [AD-29 — The theme toggle: a cookie, three states, and one thing the palette audit had missed.](#ad-29--the-theme-toggle-a-cookie-three-states-and-one-thing-the-palette-audit-had-missed)
 - [OQ-1 — RESOLVED in Phase 6. See AD-23.](#oq-1--resolved-in-phase-6-see-ad-23)
 - [OQ-1 (original) — What happens to pending requests when the intent behind them is withdrawn?](#oq-1-original--what-happens-to-pending-requests-when-the-intent-behind-them-is-withdrawn)
 
@@ -1403,6 +1404,175 @@ Server Components unchanged. Base UI's `useRender` is not a stateful hook, so
 `Badge` needs no `"use client"` — confirmed by building, not assumed. No
 boundary moved. `SkeletonCard` now renders the *real* `Card`, so a loading card
 cannot drift out of step with a loaded one.
+
+---
+
+## AD-29 — The theme toggle: a cookie, three states, and one thing the palette audit had missed.
+
+A light/dark toggle, defaulting to the OS and overriding it when asked.
+
+### A cookie, not localStorage — and that IS the no-flash story
+
+localStorage cannot be read on the server. Using it means shipping theme-less
+markup and correcting it with a blocking inline script before first paint —
+the standard trick, and it works, but it puts a synchronous script in `<head>`
+and makes the theme depend on JavaScript.
+
+A cookie arrives on the request, so `app/layout.tsx` renders `data-theme`
+into the HTML itself. There is no moment at which the document exists without
+its theme, so there is nothing to correct and nothing to flash. No script.
+
+**The absence of the cookie is load-bearing.** It means "follow the OS" — the
+state every existing user is in — and the CSS already handles that through
+`prefers-color-scheme`. The attribute is *omitted* rather than guessed, because
+a wrong guess is exactly the flash we are avoiding. A user who never touches
+the toggle gets behaviour byte-identical to before it existed, JavaScript off
+included.
+
+The cookie is client input, so it is parsed rather than trusted: anything other
+than `light` or `dark` is treated as absent. Verified with
+`Cookie: fyp-theme="><script>` — the attribute is dropped, not echoed.
+
+### The dark variant now has three states
+
+AD-28 recorded shadcn's init silently switching `dark:` from the media query to
+a `.dark` class, in an app with no `.dark` class — every dark utility would
+have stopped applying, and the only symptom would have been a permanently light
+app. The fix then was to restate the media query. A toggle means it has to be
+both at once:
+
+```
+no data-theme       -> prefers-color-scheme   (unchanged default)
+data-theme="light"  -> force light
+data-theme="dark"   -> force dark
+```
+
+Two arms: the media arm excludes anything inside an explicit light scope, the
+attribute arm needs no media query. `:where()` keeps both at zero specificity,
+so a utility's own weight is unchanged.
+
+**What made this cheap to get right:** by this point the app had *zero* `dark:`
+utilities of its own — the AD-28 token sweep replaced every one with a palette
+token. The only `dark:` classes left in the tree are inside shadcn's four
+components, on variants this app never renders. So the switch is almost
+entirely a question of whether the CSS variable blocks are correct, not whether
+hundreds of utilities still resolve. A trap that would have been dangerous in
+the old codebase was nearly inert in this one — and the reason is a refactor
+done for unrelated reasons a phase earlier.
+
+The toggle button is deliberately the exception: its two icons are swapped with
+`dark:hidden` / `dark:block`, which makes it the canary. If the variant ever
+breaks, the icon stops matching the page.
+
+**Why the icons are swapped in CSS rather than chosen in JS.** On a first visit
+with no cookie the server does not know the OS preference. A JS-chosen icon
+would therefore be wrong until hydration — trading a flash of the wrong theme
+for a flash of the wrong icon. CSS knows at first paint; JavaScript does not.
+The `aria-label` is mode-neutral ("Switch colour theme") for the same reason:
+"Switch to dark mode" would be wrong half the time and cannot be swapped by CSS.
+
+### Theme is a scope, not a global
+
+The palette blocks use bare attribute selectors (`[data-theme="dark"]`), not
+`:root`-anchored ones. That costs nothing and buys the ability to render both
+themes on one page — which is how this change was verified at all, given the
+authenticated screens could not be reached in a browser.
+
+One subtlety that would have broken it silently: **custom properties inherit as
+computed values.** A block that set `--foreground` but omitted
+`--card-foreground: var(--foreground)` would leave a nested scope inheriting the
+*other* theme's resolved hex while its own `--foreground` had already changed.
+So each theme block restates every token, including the derived ones. It reads
+as redundancy and is not.
+
+The dark declarations appear twice — once per arm — and nothing but a diff
+keeps them in step. That is the real cost of this design, and it is recorded
+rather than hidden.
+
+### What the audit caught
+
+The requirement was to remeasure contrast rather than assume it. Measuring the
+*rendered* elements, not the palette, found six failures in both themes:
+
+```
+[light] 2.47 < 4.5 @12px  "Sun"
+[dark]  3.06 < 4.5 @12px  "Sun"
+```
+
+Not the toggle's doing. `text-muted-foreground/60` on the OFF-state day chips,
+introduced by AD-28's token sweep (`text-neutral-400` mapped mechanically to a
+60% muted). AD-28's contrast pass checked palette *tokens* and never checked an
+*opacity-modified* variant, so it shipped.
+
+The 60% fade was buying nothing: the on/off distinction is already carried by
+fill versus outline, and "Sun" is informational text a reader has to read.
+Dropped to full `text-muted-foreground`. ChipGroup's genuinely disabled chips
+keep the fade — disabled controls are exempt, and there the fade means
+something.
+
+After the fix: **180 rendered text elements across both themes, zero failures,
+minimum 4.53:1 light and 5.43:1 dark.**
+
+The lesson worth keeping: a palette can be entirely AA-compliant while the
+interface built from it is not. Opacity modifiers, overlays and gradients all
+produce colours that are nowhere in the palette. Audit the pixels, not the
+tokens — the same mistake, in a different costume, as the gradient arithmetic
+in AD-28.
+
+### Known limitation: the toggle is two-state, so there is no way back to "follow system"
+
+The CSS models three states. The button only exposes two.
+
+Tap it once and a cookie is written for a year. From then on the app ignores
+the OS: a user who later switches their phone to dark at sunset stays on
+whatever they picked, and nothing in the interface offers them the automatic
+behaviour back. Clearing site data is the only route, which is not a route.
+
+**Accepted deliberately, and the cost is narrow.** Anyone who never touches the
+toggle keeps system-following forever — that is the default and the majority
+case. The loss falls only on someone who tapped it once and later wants
+automatic behaviour back, which is a smaller group than the one served by
+having the toggle at all.
+
+**Worth recording because the fix is nearly free.** The CSS already treats
+*absence* of `data-theme` as "follow the OS" — that is not a special case bolted
+on, it is the default arm of the variant. So the three-state version is a change
+to the button and nothing else: cycle system → light → dark, and write
+`Max-Age=0` to delete the cookie for the system step. No stylesheet change, no
+server change, no new state to model. It was left out to keep the control a
+single obvious tap rather than a three-way cycle whose current position is not
+self-evident from one icon.
+
+### Scope note
+
+A theme toggle is not in the PRD, and `CLAUDE.md` asks before building anything
+that is not. It was requested directly, so this is a deliberate scope addition
+rather than an oversight — the same shape as AD-11, where profile editing was
+added beyond F1.3 with the reasoning written down. Unlike AD-11 it fixes no
+correctness problem; it is a preference. Recorded plainly so that a reader
+comparing the build against the PRD finds the answer here rather than a
+discrepancy.
+
+### Verified
+
+- Server HTML carries `data-theme` for both cookie values, omits it with none,
+  and rejects a hostile value.
+- Both themes resolve distinct values for all fourteen tokens.
+- The reveal inverts in both: `#3e481d` block with `#f0f0e0` at 24px in light,
+  `#c0cba9` block with `#12140e` at 24px in dark.
+- The auth backdrop switches: white pools light, matcha greens dark.
+- The toggle's `dark:` icon swap works *inside a nested scope*, which is the
+  strongest available evidence that the three-state variant composes correctly.
+- lint, build, `verify:reveal` (26), `verify:constraints` (31),
+  `verify:matches` (29).
+
+**Not verified:** the authenticated screens as live pages. No session was
+reachable in this environment. Every component they are built from was rendered
+and measured, but the page-level composition was not.
+
+**One build change:** `/_not-found` moves from static to dynamic, because the
+root layout now reads a cookie. Every other route was already dynamic. Client
+bundle is unchanged at 121 kB.
 
 # Open questions
 

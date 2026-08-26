@@ -2,12 +2,36 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-/* shadcn's init writes `@custom-variant dark (&:is(.dark *))`, which switches
-   every `dark:` utility from the media query to a `.dark` class. This app has
-   no `.dark` class anywhere and never had a theme toggle — it follows the OS.
-   Left as shadcn wrote it, every dark variant in the app would silently stop
-   applying. Restated here as the media query so the existing behaviour holds. */
-@custom-variant dark (@media (prefers-color-scheme: dark));
+/* ===========================================================================
+   The dark variant has THREE states, not two.
+
+   shadcn's init wrote `@custom-variant dark (&:is(.dark *))` — pure class
+   based, which silently killed every dark: utility in an app that has no
+   .dark class (AD-28). The fix then was to restate it as the media query.
+   Adding a toggle means it now has to be both:
+
+     no data-theme        -> follow prefers-color-scheme  (unchanged default)
+     data-theme="light"   -> force light, even if the OS is dark
+     data-theme="dark"    -> force dark,  even if the OS is light
+
+   The media arm excludes anything inside an explicit light scope; the
+   attribute arm needs no media query at all. `:where()` keeps both at zero
+   specificity so a utility's own weight is unchanged.
+
+   Both arms match the scope element AND its descendants, so data-theme works
+   on any element, not only <html>. That is what makes a page able to show
+   both themes side by side. See docs/notes.md AD-29.
+   =========================================================================== */
+@custom-variant dark {
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme="light"], [data-theme="light"] *)) {
+      @slot;
+    }
+  }
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+}
 
 /* ===========================================================================
    Palette — Astryx "matcha" (Meta's open-source design system, MIT).
@@ -17,9 +41,21 @@
    Extracted by hand from @astryxdesign/theme-matcha rather than installed:
    the generated theme file imports @astryxdesign/core, and pulling that in
    would mean adopting the component library. See docs/notes.md AD-28.
+
+   Each theme block below is COMPLETE — every token restated, including the
+   ones derived with var(). That is not redundancy. Custom properties inherit
+   as computed values, so a block that omitted `--card-foreground:
+   var(--foreground)` would leave a nested scope inheriting the OTHER theme's
+   resolved hex while its own --foreground had already changed.
+
+   The dark declarations appear twice, once per arm, and the two must stay
+   identical. Nothing enforces that but a diff.
    =========================================================================== */
 
-:root {
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
   /* the six ---------------------------------------------------------------- */
   --background: #f0f0e0; /* body     — Astryx --color-background-body   */
   --card: #ffffff; /* surface  — Astryx --color-background-card   */
@@ -54,11 +90,17 @@
   --destructive: #cc0000;
   --destructive-surface: #fbeaea;
 
-  --radius: 0.5rem;
+  /* Login backdrop. Pools of LIGHT — see the .auth-backdrop note below. */
+  --blob-a: rgba(255, 255, 255, 0.6);
+  --blob-b: rgba(255, 255, 255, 0.9);
+  --blob-c: rgba(255, 255, 255, 0.4);
 }
 
+/* Dark, arm 1 of 2 — the OS asked for it and the user has not overridden. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
     --background: #12140e;
     --card: #1e2016;
     --foreground: #c0cba9;
@@ -66,6 +108,9 @@
     --primary: #c0cba9;
     --border: #c0cba91a;
 
+    --card-foreground: var(--foreground);
+    --popover: var(--card);
+    --popover-foreground: var(--foreground);
     --primary-foreground: #3e481d;
     --secondary: #262a1c;
     --secondary-foreground: var(--foreground);
@@ -78,7 +123,43 @@
 
     --destructive: #ff5c5c;
     --destructive-surface: #2a1414;
+
+    --blob-a: rgba(112, 126, 70, 0.28);
+    --blob-b: rgba(62, 72, 29, 0.55);
+    --blob-c: rgba(192, 203, 169, 0.07);
   }
+}
+
+/* Dark, arm 2 of 2 — the user chose it. Must match arm 1 exactly. */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --background: #12140e;
+  --card: #1e2016;
+  --foreground: #c0cba9;
+  --muted-foreground: #94a468;
+  --primary: #c0cba9;
+  --border: #c0cba91a;
+
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary-foreground: #3e481d;
+  --secondary: #262a1c;
+  --secondary-foreground: var(--foreground);
+  --muted: #262a1c;
+  --accent: #262a1c;
+  --accent-foreground: var(--foreground);
+  --input: #5a6440;
+  --ring: #94a468;
+  --skeleton: #5a6440;
+
+  --destructive: #ff5c5c;
+  --destructive-surface: #2a1414;
+
+  --blob-a: rgba(112, 126, 70, 0.28);
+  --blob-b: rgba(62, 72, 29, 0.55);
+  --blob-c: rgba(192, 203, 169, 0.07);
 }
 
 @theme inline {
@@ -115,6 +196,10 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --radius: 0.5rem;
 }
 
 @layer base {
@@ -157,7 +242,9 @@
    Login / signup backdrop — large soft radial blobs.
 
    Applied to those two screens only, via app/(auth)/layout.tsx. Pure CSS, no
-   image, no dependency.
+   image, no dependency. The geometry is written once here; only the three
+   colours change with the theme, so they live in the palette blocks above and
+   cannot drift out of step with the toggle.
 
    In BOTH modes the blobs lighten the base, which is what makes them safe:
 
@@ -178,16 +265,7 @@
 .auth-backdrop {
   background-color: var(--background);
   background-image:
-    radial-gradient(70% 55% at 18% 12%, rgba(255, 255, 255, 0.6), transparent 70%),
-    radial-gradient(60% 50% at 88% 28%, rgba(255, 255, 255, 0.9), transparent 72%),
-    radial-gradient(80% 60% at 50% 100%, rgba(255, 255, 255, 0.4), transparent 70%);
-}
-
-@media (prefers-color-scheme: dark) {
-  .auth-backdrop {
-    background-image:
-      radial-gradient(70% 55% at 18% 12%, rgba(112, 126, 70, 0.28), transparent 70%),
-      radial-gradient(60% 50% at 88% 28%, rgba(62, 72, 29, 0.55), transparent 72%),
-      radial-gradient(80% 60% at 50% 100%, rgba(192, 203, 169, 0.07), transparent 70%);
-  }
+    radial-gradient(70% 55% at 18% 12%, var(--blob-a), transparent 70%),
+    radial-gradient(60% 50% at 88% 28%, var(--blob-b), transparent 72%),
+    radial-gradient(80% 60% at 50% 100%, var(--blob-c), transparent 70%);
 }

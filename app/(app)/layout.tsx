@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { getUserId } from "@/lib/auth";
 
 /**
@@ -21,5 +22,17 @@ export default async function AppLayout({
   const userId = await getUserId();
   if (!userId) redirect("/login");
 
-  return <>{children}</>;
+  return (
+    <div className="relative">
+      {/* Pinned to the same max-w-sm / px-6 / py-10 grid every page uses, so
+          it lands beside the page heading instead of floating over it. The
+          wrapper is click-through; only the button itself is not. */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-20">
+        <div className="mx-auto flex w-full max-w-sm justify-end px-6 pt-10">
+          <ThemeToggle className="pointer-events-auto" />
+        </div>
+      </div>
+      {children}
+    </div>
+  );
 }
