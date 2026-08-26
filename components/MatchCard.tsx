@@ -1,26 +1,12 @@
 import { Avatar } from "@/components/Avatar";
 import { ConnectButton } from "@/components/ConnectButton";
+import { OverlapLine } from "@/components/OverlapLine";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { HINT } from "@/components/ui";
-import {
-  DAYS,
-  EXPERIENCE_LABELS,
-  describeSharedDays,
-  formatTimeRange,
-  overlapWindow,
-  sharedDays,
-  toHHMM,
-  type Day,
-} from "@/lib/intents";
+import { DAYS, EXPERIENCE_LABELS, formatTimeRange, sharedDays } from "@/lib/intents";
 import { RELAXED_LABEL, type MatchCandidate } from "@/lib/matches";
-
-/** What the viewer posted. Enough to work out the overlap, and nothing more. */
-export type ViewerWindow = {
-  days: Day[];
-  time_start: string;
-  time_end: string;
-};
+import type { ViewerWindow } from "@/lib/overlap";
 
 /**
  * Screen 5 — one candidate: avatar, name, year, tags, days and time.
@@ -47,12 +33,6 @@ export function MatchCard({
   highlight?: boolean;
 }) {
   const shared = sharedDays(viewer.days, candidate.days);
-  const overlap = overlapWindow(
-    viewer.time_start,
-    viewer.time_end,
-    candidate.time_start,
-    candidate.time_end
-  );
 
   return (
     <li>
@@ -79,38 +59,13 @@ export function MatchCard({
             </div>
           </div>
 
-          {/* The reason. Two overlapping circles rather than a clock or a
-              calendar, because what it reports is the intersection itself. */}
-          {shared.length > 0 ? (
-            <div className="mt-3.5 flex items-start gap-2 rounded-lg bg-muted px-3 py-2.5">
-              <svg
-                aria-hidden
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                className="mt-0.5 shrink-0 text-muted-foreground"
-              >
-                <circle cx="9" cy="12" r="6" />
-                <circle cx="15" cy="12" r="6" />
-              </svg>
-              <p className="text-sm">
-                You both train{" "}
-                <span className="font-semibold">{describeSharedDays(shared)}</span>
-                {overlap ? (
-                  <>
-                    , and you&rsquo;re both free{" "}
-                    <span className="font-semibold">
-                      {toHHMM(overlap.start)} – {toHHMM(overlap.end)}
-                    </span>
-                  </>
-                ) : null}
-                .
-              </p>
-            </div>
-          ) : null}
+          <OverlapLine
+            className="mt-3.5"
+            viewer={viewer}
+            days={candidate.days}
+            timeStart={candidate.time_start}
+            timeEnd={candidate.time_end}
+          />
 
           {/* All seven days. A filled chip now means a day you SHARE, not a day
               they happen to train — the intersection is the useful fact, and

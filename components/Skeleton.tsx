@@ -76,11 +76,7 @@ export function SkeletonScreen({
   children: React.ReactNode;
 }) {
   return (
-    <main
-      role="status"
-      aria-busy="true"
-      className="mx-auto w-full max-w-sm px-6 py-10"
-    >
+    <main role="status" aria-busy="true" className="py-6">
       <span className="sr-only">{label}</span>
       {children}
     </main>

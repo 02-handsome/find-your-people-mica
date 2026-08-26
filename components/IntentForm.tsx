@@ -3,8 +3,7 @@
 import { useActionState } from "react";
 
 import type { IntentFormState } from "@/app/(app)/(complete)/intent/actions";
-import { Dumbbell, Footprints, Volleyball } from "lucide-react";
-
+import { ActivityIcon } from "@/components/ActivityIcon";
 import { ChipGroup } from "@/components/ChipGroup";
 import { FormError } from "@/components/FormError";
 import { SubmitButton } from "@/components/SubmitButton";
@@ -16,22 +15,9 @@ import {
   EXPERIENCE_LABELS,
   EXPERIENCE_LEVELS,
   toHHMM,
-  type Activity,
   type Intent,
 } from "@/lib/intents";
 
-/**
- * The activity picker is the one field that cannot be changed after posting
- * (AD-15), so it gets the tall two-column treatment rather than a pill row —
- * a pattern borrowed from Strava's sport picker. Icons carry no information
- * the label does not; they are there to make three near-identical rectangles
- * distinguishable at a glance.
- */
-const ACTIVITY_ICONS: Record<Activity, React.ReactNode> = {
-  gym: <Dumbbell aria-hidden className="size-6" strokeWidth={1.75} />,
-  running: <Footprints aria-hidden className="size-6" strokeWidth={1.75} />,
-  sport: <Volleyball aria-hidden className="size-6" strokeWidth={1.75} />,
-};
 
 /**
  * Screen 3 (PRD section 7): activity, day toggles, time range, experience level.
@@ -78,7 +64,7 @@ export function IntentForm({
             options={ACTIVITIES.map((a) => ({
               value: a,
               label: ACTIVITY_LABELS[a],
-              icon: ACTIVITY_ICONS[a],
+              icon: <ActivityIcon activity={a} className="size-6" />,
             }))}
             initial={activity ? [activity] : []}
             single

@@ -32,7 +32,7 @@ export default async function MatchesPage() {
   };
 
   return (
-    <main className="mx-auto w-full max-w-sm px-6 py-10">
+    <main className="py-6">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">Your matches</h1>
         <p className={`mt-2 ${HINT}`}>

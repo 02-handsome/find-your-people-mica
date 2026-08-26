@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { ProfileSetupForm } from "@/components/ProfileSetupForm";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { HINT } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { isProfileComplete } from "@/lib/profile-options";
@@ -43,7 +44,14 @@ export default async function ProfileSetupPage() {
   const editing = isProfileComplete(profile);
 
   return (
-    <main className="mx-auto w-full max-w-sm px-6 py-10">
+    <main className="mx-auto w-full max-w-md px-5 py-10">
+      {/* This screen is outside the (complete) shell, so it has no app bar to
+          hang the toggle on. Restyled properly when profile-setup gets its own
+          pass. */}
+      <div className="mb-6 flex justify-end">
+        <ThemeToggle />
+      </div>
+
       <h1 className="text-2xl font-semibold tracking-tight">
         {editing ? "Edit your profile" : "Set up your profile"}
       </h1>

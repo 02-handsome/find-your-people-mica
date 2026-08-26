@@ -44,16 +44,21 @@ export const BUTTON_PRIMARY =
 export const BUTTON_PRIMARY_LINK = BUTTON_PRIMARY;
 
 /**
- * Stitch: "Secondary: White background with a 1px border and text." Used for
- * Decline and Withdraw.
+ * The secondary action. Decline, Withdraw.
  *
- * Deliberately NOT red. Their `error` red exists, but a red button beside the
- * red primary reads as a traffic light and would make an ordinary silent
- * decline (F4.6) look like a failure.
+ * A FILLED grey, not the outlined white their DESIGN.md prose describes
+ * ("Secondary: White background with a 1px Red border and Red text") — every
+ * one of their five screens actually draws it as a filled neutral, and the
+ * screens are what was chosen. A red-bordered secondary would also put red on
+ * both halves of the Accept/Decline pair.
+ *
+ * Deliberately NOT red for the same reason it was not red before: declining is
+ * silent and ordinary (F4.6), and red beside the red primary reads as a
+ * traffic light.
  */
 export const BUTTON_NEUTRAL =
-  "inline-flex h-12 items-center justify-center gap-2 rounded-lg border " +
-  "border-border bg-card px-5 text-base font-semibold text-foreground " +
+  "inline-flex h-12 items-center justify-center gap-2 rounded-lg " +
+  "bg-secondary px-5 text-base font-semibold text-secondary-foreground " +
   "transition-colors hover:bg-muted active:translate-y-px " +
   "disabled:opacity-50";
 
