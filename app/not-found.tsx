@@ -16,14 +16,14 @@ export default function NotFound() {
         <h1 className="text-2xl font-semibold tracking-tight">
           That page doesn&rsquo;t exist
         </h1>
-        <p className="mt-2 text-sm text-neutral-500">
+        <p className="mt-2 text-sm text-muted-foreground">
           The link may be out of date, or the address slightly off.
         </p>
       </div>
 
       <Link
         href="/login"
-        className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-base font-medium text-white inline-block text-center dark:bg-neutral-100 dark:text-neutral-900"
+        className="w-full rounded-lg bg-primary px-4 py-3 text-base font-medium text-primary-foreground inline-block text-center "
       >
         Go to Find Your People
       </Link>

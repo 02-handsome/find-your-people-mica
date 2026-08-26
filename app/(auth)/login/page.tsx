@@ -62,7 +62,7 @@ export default async function LoginPage() {
           {TEST_ACCOUNTS.map((account) => (
             <li
               key={account.email}
-              className="font-mono text-xs break-all text-neutral-600 dark:text-neutral-400"
+              className="font-mono text-xs break-all text-muted-foreground"
             >
               {account.email} · {account.password}
             </li>
@@ -73,7 +73,7 @@ export default async function LoginPage() {
               F3.3 returns the top 3 and test.two does not make test.one's,
               so F4.1 correctly rejects it. Without this line that reads as a
               broken Connect button. See lib/test-accounts.ts. */}
-          <strong className="font-medium text-neutral-700 dark:text-neutral-300">
+          <strong className="font-medium text-foreground">
             Start from test.two.
           </strong>{" "}
           Send the request from there, then log in as test.one to accept — the

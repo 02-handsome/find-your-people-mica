@@ -56,7 +56,7 @@ export function Avatar({
     <span
       aria-hidden
       style={{ width: size, height: size, fontSize: Math.round(size * 0.36) }}
-      className="relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-neutral-200 leading-none font-medium tracking-tight text-neutral-600 select-none dark:bg-neutral-800 dark:text-neutral-400"
+      className="relative grid shrink-0 place-items-center overflow-hidden rounded-full bg-secondary leading-none font-medium tracking-tight text-muted-foreground select-none"
     >
       {initials(name)}
 

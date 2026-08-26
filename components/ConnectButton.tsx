@@ -29,7 +29,7 @@ export function ConnectButton({ toUserId }: { toUserId: string }) {
 
   if (state.sent) {
     return (
-      <p className={`mt-4 rounded-lg bg-neutral-100 px-3 py-2 text-sm font-medium dark:bg-neutral-900`}>
+      <p className="mt-4 rounded-lg bg-muted px-3 py-2 text-sm font-medium">
         {REQUEST_SENT_LABEL}
       </p>
     );

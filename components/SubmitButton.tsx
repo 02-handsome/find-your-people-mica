@@ -2,6 +2,7 @@
 
 import { useFormStatus } from "react-dom";
 
+import { Button } from "@/components/ui/button";
 import { BUTTON_PRIMARY } from "@/components/ui";
 
 /**
@@ -19,8 +20,8 @@ export function SubmitButton({
   const { pending } = useFormStatus();
 
   return (
-    <button type="submit" disabled={pending} className={BUTTON_PRIMARY}>
+    <Button type="submit" disabled={pending} className={BUTTON_PRIMARY}>
       {pending ? pendingLabel : children}
-    </button>
+    </Button>
   );
 }

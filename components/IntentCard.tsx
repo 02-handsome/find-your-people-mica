@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { WithdrawIntent } from "@/components/WithdrawIntent";
-import { CARD, HINT } from "@/components/ui";
+import { BUTTON_NEUTRAL, CARD, HINT } from "@/components/ui";
 import {
   ACTIVITY_LABELS,
   DAYS,
@@ -29,7 +29,7 @@ export function IntentCard({ intent }: { intent: Intent }) {
           </h2>
           <p className={HINT}>{EXPERIENCE_LABELS[intent.experience_level]}</p>
         </div>
-        <span className="shrink-0 rounded-full border border-neutral-200 px-2.5 py-1 text-xs text-neutral-600 dark:border-neutral-800 dark:text-neutral-400">
+        <span className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs text-muted-foreground">
           {formatExpiry(intent.expires_at)}
         </span>
       </div>
@@ -43,8 +43,8 @@ export function IntentCard({ intent }: { intent: Intent }) {
               className={
                 "rounded-full px-2.5 py-1 text-xs " +
                 (on
-                  ? "bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900"
-                  : "border border-neutral-200 text-neutral-400 dark:border-neutral-800 dark:text-neutral-600")
+                  ? "bg-primary text-primary-foreground"
+                  : "border border-border text-muted-foreground/60")
               }
             >
               {day}
@@ -58,10 +58,12 @@ export function IntentCard({ intent }: { intent: Intent }) {
       </p>
 
       {/* Both remaining CRUD operations, one tap each from home. */}
-      <div className="mt-5 flex items-center gap-5">
+      {/* Both remaining CRUD operations, one tap each from home — and both
+          now real targets rather than 14px text links. */}
+      <div className="mt-5 flex flex-wrap items-center gap-2.5">
         <Link
           href="/intent/edit"
-          className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+          className={`${BUTTON_NEUTRAL} text-sm`}
         >
           Edit
         </Link>

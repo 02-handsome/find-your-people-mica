@@ -12,7 +12,7 @@ function Button() {
     <button
       type="submit"
       disabled={pending}
-      className="text-sm font-medium underline text-neutral-600 disabled:opacity-50 dark:text-neutral-400"
+      className="inline-block py-3 text-sm font-medium underline text-muted-foreground disabled:opacity-50"
     >
       {pending ? "Logging out…" : "Log out"}
     </button>

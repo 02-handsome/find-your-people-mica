@@ -1,32 +1,193 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+/* shadcn's init writes `@custom-variant dark (&:is(.dark *))`, which switches
+   every `dark:` utility from the media query to a `.dark` class. This app has
+   no `.dark` class anywhere and never had a theme toggle — it follows the OS.
+   Left as shadcn wrote it, every dark variant in the app would silently stop
+   applying. Restated here as the media query so the existing behaviour holds. */
+@custom-variant dark (@media (prefers-color-scheme: dark));
+
+/* ===========================================================================
+   Palette — Astryx "matcha" (Meta's open-source design system, MIT).
+   Colours only. The theme's typography (Playwrite US Trad / DM Sans) and its
+   radii are deliberately NOT adopted; Geist and the existing radii stay.
+
+   Extracted by hand from @astryxdesign/theme-matcha rather than installed:
+   the generated theme file imports @astryxdesign/core, and pulling that in
+   would mean adopting the component library. See docs/notes.md AD-28.
+   =========================================================================== */
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* the six ---------------------------------------------------------------- */
+  --background: #f0f0e0; /* body     — Astryx --color-background-body   */
+  --card: #ffffff; /* surface  — Astryx --color-background-card   */
+  --foreground: #3e481d; /* text     — Astryx --color-text-primary      */
+  --muted-foreground: #626e3d; /* muted    — see note below                   */
+  --primary: #3e481d; /* accent   — Astryx --color-accent            */
+  --border: #dce3ce; /* border   — Astryx --color-border            */
+
+  /* NOTE on --muted-foreground. Astryx's --color-text-secondary is #707E46,
+     which measures 3.83:1 on the body background and 4.41:1 on a card — under
+     the 4.5:1 floor for body text on BOTH surfaces. It is used here for the
+     expiry countdown, the contact-privacy line and the PRD's empty-state copy,
+     none of which are decorative. Darkened to #626E3D, the smallest step that
+     clears 4.5:1 on both. Same hue, same family, legible. */
+
+  /* derived ---------------------------------------------------------------- */
+  --card-foreground: var(--foreground);
+  --popover: var(--card);
+  --popover-foreground: var(--foreground);
+  --primary-foreground: #ffffff; /* Astryx --color-on-accent */
+  --secondary: #e7ebda;
+  --secondary-foreground: var(--foreground);
+  --muted: #e7ebda;
+  --accent: #e7ebda; /* shadcn's "accent" is a hover surface, not the brand accent */
+  --accent-foreground: var(--foreground);
+  --input: #b7c29e; /* Astryx --color-border-emphasized */
+  --ring: #707e46;
+  --skeleton: #c0cba9; /* Astryx --color-skeleton */
+
+  /* Kept red, and only ever for form errors. Astryx's --color-error is
+     #FD0000, which is too hot to read as text; this is its --color-text-red. */
+  --destructive: #cc0000;
+  --destructive-surface: #fbeaea;
+
+  --radius: 0.5rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #12140e;
+    --card: #1e2016;
+    --foreground: #c0cba9;
+    --muted-foreground: #94a468;
+    --primary: #c0cba9;
+    --border: #c0cba91a;
+
+    --primary-foreground: #3e481d;
+    --secondary: #262a1c;
+    --secondary-foreground: var(--foreground);
+    --muted: #262a1c;
+    --accent: #262a1c;
+    --accent-foreground: var(--foreground);
+    --input: #5a6440;
+    --ring: #94a468;
+    --skeleton: #5a6440;
+
+    --destructive: #ff5c5c;
+    --destructive-surface: #2a1414;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-surface: var(--destructive-surface);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-skeleton: var(--skeleton);
+
+  /* Restores the Geist wiring. shadcn's init overwrote this with
+     `--font-sans: var(--font-sans)`, a self-reference that resolves to
+     nothing and silently drops the webfont back to the fallback stack. */
   --font-sans: var(--font-geist-sans);
+
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  /* No font-family here on purpose. The scaffold hardcoded Arial, which
-     overrode the Geist font loaded in layout.tsx and made the webfont dead
-     weight. Setting `var(--font-sans)` instead does not work either: `@theme
-     inline` above tells Tailwind to inline theme values into utilities rather
-     than emit them as CSS variables, so `--font-sans` does not exist at
-     runtime — and an unresolved var() with no fallback invalidates the whole
-     declaration. The font is applied with the `font-sans` utility on <body>
-     in layout.tsx, which Tailwind expands to var(--font-geist-sans). */
+/* The reveal (F4.5). One animation in the whole app, on the one moment the
+   product exists to deliver. Pure CSS so ConnectionCard stays a Server
+   Component — no hook, no "use client", no client bundle. */
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.animate-reveal {
+  animation: reveal-in 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-reveal {
+    animation: none;
+  }
+}
+
+/* ===========================================================================
+   Login / signup backdrop — large soft radial blobs.
+
+   Applied to those two screens only, via app/(auth)/layout.tsx. Pure CSS, no
+   image, no dependency.
+
+   In BOTH modes the blobs lighten the base, which is what makes them safe:
+
+   - Dark  — matcha greens over #12140e. Sampling the real gradient falloff on
+     a 201x201 grid, the darkest-contrast point is a blob centre at #2c321e,
+     where the 14px muted text still measures 4.92:1. (An earlier estimate of
+     3.65:1 "where two blobs overlap" was wrong: it stacked the layers at full
+     alpha, but a radial-gradient fades to zero at its stop, so a geometric
+     overlap is precisely where both layers are nearly transparent.)
+
+   - Light — white over #F0F0E0. Cream leaves almost no headroom: muted text is
+     only 4.78:1 on the flat background, so ANY darkening tint drops it below
+     4.5. Lightening instead means the worst case on the whole surface IS the
+     flat background. The pattern cannot cost contrast here, by construction.
+
+   See docs/notes.md AD-28.
+   =========================================================================== */
+.auth-backdrop {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(70% 55% at 18% 12%, rgba(255, 255, 255, 0.6), transparent 70%),
+    radial-gradient(60% 50% at 88% 28%, rgba(255, 255, 255, 0.9), transparent 72%),
+    radial-gradient(80% 60% at 50% 100%, rgba(255, 255, 255, 0.4), transparent 70%);
+}
+
+@media (prefers-color-scheme: dark) {
+  .auth-backdrop {
+    background-image:
+      radial-gradient(70% 55% at 18% 12%, rgba(112, 126, 70, 0.28), transparent 70%),
+      radial-gradient(60% 50% at 88% 28%, rgba(62, 72, 29, 0.55), transparent 72%),
+      radial-gradient(80% 60% at 50% 100%, rgba(192, 203, 169, 0.07), transparent 70%);
+  }
 }

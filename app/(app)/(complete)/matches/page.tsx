@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { TriangleAlert, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
@@ -22,6 +23,14 @@ export default async function MatchesPage() {
 
   const { matches, failed } = await getMatches();
 
+  // The same row the ranking used. Passing it down is what lets each card say
+  // WHY it is where it is; no extra query is involved.
+  const viewer = {
+    days: intent.days,
+    time_start: intent.time_start,
+    time_end: intent.time_end,
+  };
+
   return (
     <main className="mx-auto w-full max-w-sm px-6 py-10">
       <header>
@@ -36,23 +45,42 @@ export default async function MatchesPage() {
         /* Distinct from the empty state on purpose. F3.6's "You're early" is a
            claim about the world; showing it after a failed query would be a
            confident lie about why the screen is empty. */
-        <section className={`mt-8 ${CARD}`}>
-          <h2 className="text-base font-medium">Couldn&rsquo;t load matches</h2>
-          <p className={`mt-1 ${HINT}`}>
+        <section className={`mt-8 ${CARD} text-center`}>
+          <TriangleAlert
+            aria-hidden
+            className="mx-auto size-7 text-muted-foreground"
+            strokeWidth={1.5}
+          />
+          <h2 className="mt-4 text-base font-medium">
+            Couldn&rsquo;t load matches
+          </h2>
+          <p className={`mt-2 ${HINT}`}>
             Something went wrong on our side, not yours. Your intent is still
             live.
           </p>
         </section>
       ) : matches.length === 0 ? (
         /* F3.6, verbatim. CLAUDE.md: never a blank screen. */
-        <section className={`mt-8 ${CARD}`}>
-          <h2 className="text-base font-medium">Nobody yet</h2>
-          <p className={`mt-1 ${HINT}`}>{EMPTY_POOL_COPY}</p>
+        <section className={`mt-8 ${CARD} px-6 py-10 text-center`}>
+          <Users
+            aria-hidden
+            className="mx-auto size-8 text-muted-foreground"
+            strokeWidth={1.5}
+          />
+          <h2 className="mt-5 text-base font-medium">Nobody yet</h2>
+          <p className={`mt-2 ${HINT}`}>{EMPTY_POOL_COPY}</p>
         </section>
       ) : (
         <ul className="mt-8 space-y-4">
-          {matches.map((candidate) => (
-            <MatchCard key={candidate.intent_id} candidate={candidate} />
+          {matches.map((candidate, index) => (
+            <MatchCard
+              key={candidate.intent_id}
+              candidate={candidate}
+              viewer={viewer}
+              // F3.3 hands these back already sorted, so the first row is the
+              // top-ranked one.
+              highlight={index === 0}
+            />
           ))}
         </ul>
       )}
@@ -60,7 +88,7 @@ export default async function MatchesPage() {
       <div className="mt-8">
         <Link
           href="/"
-          className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+          className="inline-block py-3 text-sm font-medium underline text-muted-foreground"
         >
           Back to home
         </Link>

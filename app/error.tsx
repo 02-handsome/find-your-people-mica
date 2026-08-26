@@ -35,7 +35,7 @@ export default function AppError({
         <h1 className="text-2xl font-semibold tracking-tight">
           Something went wrong
         </h1>
-        <p className="mt-2 text-sm text-neutral-500">
+        <p className="mt-2 text-sm text-muted-foreground">
           {/* Says what is and is not affected. A generic apology leaves people
               wondering whether their intent or their connections are lost. */}
           This one is on us, not you. Nothing you posted has been lost — your
@@ -47,20 +47,20 @@ export default function AppError({
         <button
           type="button"
           onClick={reset}
-          className="w-full rounded-lg bg-neutral-900 px-4 py-3 text-base font-medium text-white dark:bg-neutral-100 dark:text-neutral-900"
+          className="w-full rounded-lg bg-primary px-4 py-3 text-base font-medium text-primary-foreground "
         >
           Try again
         </button>
         <Link
           href="/"
-          className="inline-block text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+          className="inline-block text-sm font-medium underline text-muted-foreground"
         >
           Back to home
         </Link>
       </div>
 
       {error.digest ? (
-        <p className="font-mono text-xs text-neutral-400">
+        <p className="font-mono text-xs text-muted-foreground/60">
           Reference: {error.digest}
         </p>
       ) : null}

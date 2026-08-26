@@ -33,6 +33,7 @@ chose, why, and what I gave up.
 - [AD-26 — Phase 7: three silent failures, one redirect loop, and a countdown that read as a bug.](#ad-26--phase-7-three-silent-failures-one-redirect-loop-and-a-countdown-that-read-as-a-bug)
 - [AD-13 revised (Phase 7) — the published test accounts get the long horizon too.](#ad-13-revised-phase-7--the-published-test-accounts-get-the-long-horizon-too)
 - [AD-27 — The avatar fallback is the default state, not an error handler.](#ad-27--the-avatar-fallback-is-the-default-state-not-an-error-handler)
+- [AD-28 — Visual pass: a borrowed palette, a borrowed grid, and one moment allowed to be loud.](#ad-28--visual-pass-a-borrowed-palette-a-borrowed-grid-and-one-moment-allowed-to-be-loud)
 - [OQ-1 — RESOLVED in Phase 6. See AD-23.](#oq-1--resolved-in-phase-6-see-ad-23)
 - [OQ-1 (original) — What happens to pending requests when the intent behind them is withdrawn?](#oq-1-original--what-happens-to-pending-requests-when-the-intent-behind-them-is-withdrawn)
 
@@ -1198,6 +1199,210 @@ already required a generated avatar, and this only decides what is on screen
 when the generator cannot be reached. It is the same class of work as the six
 `loading.tsx` files added in AD-26 — making an existing requirement hold when
 the network does not cooperate.
+
+---
+
+## AD-28 — Visual pass: a borrowed palette, a borrowed grid, and one moment allowed to be loud.
+
+Phase 8 shipped the app monochrome. This is a visual pass over it — no new
+routes, no schema change, no new SQL, no Server Component boundary moved. What
+changed is which colours things are, which component draws them, and how much
+room the important things get.
+
+### Where the palette came from
+
+**Astryx "matcha"** — Meta's open-source design system (`facebook/astryx`, MIT).
+Six values, both modes:
+
+| Role | Astryx token | Light | Dark |
+| --- | --- | --- | --- |
+| background | `--color-background-body` | `#F0F0E0` | `#12140e` |
+| surface | `--color-background-card` | `#FFFFFF` | `#1e2016` |
+| text | `--color-text-primary` | `#3E481D` | `#C0CBA9` |
+| muted | `--color-text-secondary` | `#707E46` → see below | `#94a468` |
+| accent | `--color-accent` | `#3E481D` | `#C0CBA9` |
+| border | `--color-border` | `#DCE3CE` | `#C0CBA91A` |
+
+**Taken by hand rather than installed.** `npx @astryxdesign/cli theme add matcha`
+adds no dependency and touches no tracked file — it writes
+`src/themes/matcha/*.ts`. But that file `import`s `@astryxdesign/core`, so
+keeping it means adopting the component library, and it fails `tsc` until you
+do (`tsconfig.json` includes `**/*.ts`, so an unused, uncompilable file still
+breaks `npm run build`). The generated file was read for its values and deleted.
+Its typography (Playwrite US Trad, DM Sans) and radii were not adopted; Geist
+and the existing radii stay.
+
+**One value was changed, and it is worth knowing why.** Astryx's
+`--color-text-secondary` `#707E46` measures **3.83:1** on the body background
+and **4.41:1** on a card — under the 4.5:1 floor on *both* surfaces. It carries
+the expiry countdown, the contact-privacy line and the PRD's own empty-state
+copy, none of which are decorative. Darkened to `#626E3D`: **4.78:1** and
+**5.5:1**, the smallest step that clears the floor. Dark mode needed no change
+(6.86:1 / 6.10:1). Numbers measured, not eyeballed.
+
+### The palette has no accent, in the sense a palette usually does
+
+`--color-accent` and `--color-text-primary` are the **same hex** — `#3E481D` in
+light, `#C0CBA9` in dark. Matcha's accent *is* its darkest tone.
+
+That is fine for a button: a deep-green fill with white on it reads as a primary
+action against cream. It is fatal for anything that wants to be loud *as text*,
+because "in the accent colour" and "in the text colour" are the same
+instruction. So the two places that had to shout do it by **inversion** — solid
+fill, content reversed out:
+
+- the contact reveal (below), and
+- the selected state of the activity picker.
+
+Both say "this is the important thing" the same way, which is the point: one
+mechanic, used twice, rather than two ideas that each half-work.
+
+**Where accent is allowed:** primary actions only — Connect, Accept, Post
+intent, Save changes, See your matches — plus the filled day chips and the
+reveal. Nowhere else.
+
+**Decline is neutral, never red.** On a green palette a red button beside a
+green one is a traffic light, and it would make an ordinary silent choice
+(F4.6) look like an error. The one surviving red is "Yes, withdraw", which is
+genuinely destructive and only appears after a deliberate first tap — it never
+sits next to the green primary.
+
+**Disabled primaries are a faded accent, not grey.** `bg-primary/40` with the
+label at 70%, rather than the old whole-element `opacity-50`. Greying it out
+loses the one thing the state should communicate: *this* is the control that
+becomes available.
+
+### The reason line — AD-19's objection, answered
+
+Match cards now say **"You both train Mon–Fri, and you're both free 06:00 –
+09:00."**
+
+AD-19 argued the score should not be rendered, and that still holds: a number
+invites an argument about the weighting instead of about the person. But the
+objection was to *the number*, not to *the reason*. `shared_days` and
+`time_overlap_minutes` are the two largest terms in F3's formula and both have
+been returned by `get_matches()` since Phase 5, rendered nowhere. Every screen
+showing a candidate already loads the viewer's own intent. So the line is a
+pure display change over data already on the page — no query, no column, no
+SQL.
+
+It also does the job the ranking could not do for itself: it makes the ordering
+legible. The top card additionally carries a 4px accent rule on its left edge —
+ranking made visible without printing a position either.
+
+**The filled day chips changed meaning** from "days they train" to "days you
+share". The intersection is the useful fact, and the sentence above names it in
+words, so the encoding needs no legend.
+
+**The line is capped at two rows, by measurement.** Inside a card it has 247px
+of text width at 14px/20px. Every phrasing fits two rows except an enumerated
+run of four or more scattered days — "Mon, Wed, Thu, Sat, Sun" reaches three,
+which costs 20px on every card at once. So `describeSharedDays()` enumerates a
+contiguous run or three-or-fewer days, and otherwise gives the count ("5 days a
+week"). Nothing is lost: the chips directly below show exactly which days.
+
+### The activity picker: Strava's pattern, none of Strava's design
+
+The activity choice is a two-column grid of tall cards, icon above label,
+selected by inversion. The **pattern** is lifted from Strava's sport picker —
+two columns, generous height, icon over label, solid-fill selection. None of
+their design is: not the orange, not the typeface, not the iconography (lucide
+`Dumbbell` / `Footprints` / `Volleyball`).
+
+Why this field and not the others: `activity` is the only field on the form that
+**cannot be changed after posting** (AD-15) and the only one that decides which
+pool you are matched into. Everything else on that form is a correction away
+from being fixed. It earns the space; days, tags, years and levels stay compact
+pills, and the seven day chips in particular have to stay dense at 375px.
+
+Implemented as a `variant` on `ChipGroup`, not a fork. The two variants differ
+only in how one cell is drawn — the state handling, the hidden inputs, the limit
+logic and the announced counter are the hard parts and are shared. Forking would
+have left two copies of exactly the code that took two attempts to get right
+(AD-11).
+
+### The reveal is an event, not a field
+
+F4.5 is the entire promise of the product, and it was rendering as an 18px
+number in a grey box — the same treatment any other field would get.
+
+It is now a solid accent block with the number reversed out at 24px, one line of
+acknowledgement above it ("You both said yes. Here's how to reach them."), and
+a 300ms fade-and-scale on arrival. `connected_at`, returned by
+`get_connections()` since Phase 6 and never rendered, appears as a date.
+
+**The animation is a CSS keyframe, not a hook.** `ConnectionCard` stays a Server
+Component and ships no JavaScript for it, and it is disabled under
+`prefers-reduced-motion`.
+
+Everything else on the screen stayed restrained deliberately. The moment only
+lands if nothing else is competing.
+
+### The login backdrop, and a piece of arithmetic I got wrong
+
+Login and signup get a backdrop of three large soft radial blobs — pure CSS, no
+image, no dependency, chosen from three candidates (diagonal hatching, a dot
+grid, blobs) rendered side by side on a throwaway `/pattern-test` page that was
+deleted once the choice was made.
+
+It is scoped to those two screens through `app/(auth)/layout.tsx`, on a
+full-bleed wrapper rather than on `<main>` — `<main>` is `max-w-sm`, so styling
+it would paint a 384px stripe down the middle of a desktop window instead of a
+background.
+
+**The mistake, because it is the more useful half of this entry.** Judging the
+candidates, I reported that the blobs dropped the 14px muted text to 3.65:1
+where two of them overlapped — a fail. That number came from compositing the
+three layers at their stated alphas. It is wrong, and wrong in a way worth
+remembering: a `radial-gradient` fades to zero at its stop, so **the region
+where two blobs overlap geometrically is precisely the region where both are
+nearly transparent**. Peak alpha occurs at a blob's centre, and no other blob
+reaches that far.
+
+Sampling the real falloff on a 201×201 grid gives the true worst point as a
+blob centre, `#2c321e`, where muted text measures **4.92:1** — a pass. The
+correction mattered: acting on the bad number would have meant halving the
+alphas and shipping a weaker version of a design that was already sound.
+
+The general form of the error: *a model of the thing is not the thing.* Full-
+alpha compositing is a fair model of stacked flat fills and a bad model of
+stacked gradients, and nothing about the arithmetic announces which case it is
+in.
+
+**Light mode is where this one is actually constrained.** In dark, all three
+blobs lighten `#12140e` — matcha greens over near-black. In light there is
+almost no headroom: muted text is only 4.78:1 on flat `#F0F0E0`, so *any*
+darkening tint puts it under 4.5 (measured at 4.19 even with the alphas nearly
+halved). So the light backdrop lightens too — white pools rather than green
+ones. That makes the worst case on the whole surface **the flat background
+itself**: the pattern cannot cost contrast in light mode, by construction,
+rather than by a number that has to be re-checked whenever a blob moves.
+
+Same geometry in both modes, same idea in both modes — pools of light — and the
+only mode with a real constraint is handled structurally.
+
+### Two things shadcn's init did that had to be undone
+
+Worth recording, because both fail silently and neither shows up in a build.
+
+1. **It rewrote the dark variant to be class-based** —
+   `@custom-variant dark (&:is(.dark *))`. This app has no `.dark` class and no
+   theme toggle; it follows the OS. Left alone, *every* `dark:` utility in the
+   codebase would have stopped applying, and the only symptom would have been
+   an app that is permanently light. Restated as
+   `@custom-variant dark (@media (prefers-color-scheme: dark))`.
+
+2. **It overwrote `--font-sans` with `var(--font-sans)`** — a self-reference
+   that resolves to nothing, silently dropping Geist back to the fallback
+   stack. The original wiring (`var(--font-geist-sans)`) is restored, and the
+   long comment in `globals.css` explaining why the font is applied by utility
+   rather than in `body` still applies.
+
+**On Server Components:** `Card`, `Badge` and `Skeleton` all render inside
+Server Components unchanged. Base UI's `useRender` is not a stateful hook, so
+`Badge` needs no `"use client"` — confirmed by building, not assumed. No
+boundary moved. `SkeletonCard` now renders the *real* `Card`, so a loading card
+cannot drift out of step with a loaded one.
 
 # Open questions
 

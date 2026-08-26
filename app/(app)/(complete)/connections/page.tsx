@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Handshake, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 
 import { ConnectionCard } from "@/components/ConnectionCard";
@@ -26,8 +27,13 @@ export default async function ConnectionsPage() {
            connections when the query broke is a claim about their life made on
            no information — and here it is the worst possible claim, because the
            screen exists to hold contact details they were promised. */
-        <section className={`mt-8 ${CARD}`}>
-          <h2 className="text-base font-medium">
+        <section className={`mt-8 ${CARD} text-center`}>
+          <TriangleAlert
+            aria-hidden
+            className="mx-auto size-7 text-muted-foreground"
+            strokeWidth={1.5}
+          />
+          <h2 className="mt-4 text-base font-medium">
             Couldn&rsquo;t load your connections
           </h2>
           <p className={`mt-1 ${HINT}`}>
@@ -38,9 +44,14 @@ export default async function ConnectionsPage() {
       ) : connections.length === 0 ? (
         /* CLAUDE.md: never a blank screen. Explains the mechanism rather than
            reporting an absence — "none yet" alone reads like something broke. */
-        <section className={`mt-8 ${CARD}`}>
-          <h2 className="text-base font-medium">No connections yet</h2>
-          <p className={`mt-1 ${HINT}`}>
+        <section className={`mt-8 ${CARD} px-6 py-10 text-center`}>
+          <Handshake
+            aria-hidden
+            className="mx-auto size-8 text-muted-foreground"
+            strokeWidth={1.5}
+          />
+          <h2 className="mt-5 text-base font-medium">No connections yet</h2>
+          <p className={`mt-2 ${HINT}`}>
             When you send someone a request and they accept, you&rsquo;ll both
             see each other&rsquo;s contact here.
           </p>
@@ -62,7 +73,7 @@ export default async function ConnectionsPage() {
       <div className="mt-8">
         <Link
           href="/"
-          className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+          className="inline-block py-3 text-sm font-medium underline text-muted-foreground"
         >
           Back to home
         </Link>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Dumbbell, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 
 import { Avatar } from "@/components/Avatar";
@@ -46,6 +47,16 @@ export default async function HomePage() {
   // both. See lib/auth.ts.
   if (!profile) return null;
 
+  // The same row the ranking uses. Derived from the intent this page already
+  // loads for the card below — the reason line costs no extra query.
+  const viewer = intent
+    ? {
+        days: intent.days,
+        time_start: intent.time_start,
+        time_end: intent.time_end,
+      }
+    : null;
+
   return (
     <main className="mx-auto w-full max-w-sm px-6 py-10">
       <header className="flex items-center gap-3">
@@ -66,8 +77,13 @@ export default async function HomePage() {
         /* An inline failure, not a thrown one: the rest of this screen — the
            user's intent, their contact handle — loaded fine and is still
            useful. Degrading one section beats replacing the whole page. */
-        <section className={`mt-8 ${CARD}`}>
-          <h2 className="text-base font-medium">
+        <section className={`mt-8 ${CARD} text-center`}>
+          <TriangleAlert
+            aria-hidden
+            className="mx-auto size-7 text-muted-foreground"
+            strokeWidth={1.5}
+          />
+          <h2 className="mt-4 text-base font-medium">
             Couldn&rsquo;t load your requests
           </h2>
           <p className={`mt-1 ${HINT}`}>
@@ -84,7 +100,11 @@ export default async function HomePage() {
           </h2>
           <ul className="mt-3 space-y-4">
             {incoming.requests.map((request) => (
-              <IncomingRequestCard key={request.request_id} request={request} />
+              <IncomingRequestCard
+                key={request.request_id}
+                request={request}
+                viewer={viewer}
+              />
             ))}
           </ul>
         </section>
@@ -105,9 +125,14 @@ export default async function HomePage() {
           /* CLAUDE.md: never a blank screen. This is the state a brand-new user
              lands on, so it explains the product in one line rather than just
              reporting an absence. */
-          <section className={CARD}>
-            <h2 className="text-base font-medium">No active intent</h2>
-            <p className={`mt-1 ${HINT}`}>
+          <section className={`${CARD} px-6 py-10 text-center`}>
+            <Dumbbell
+              aria-hidden
+              className="mx-auto size-8 text-muted-foreground"
+              strokeWidth={1.5}
+            />
+            <h2 className="mt-5 text-base font-medium">No active intent</h2>
+            <p className={`mt-2 ${HINT}`}>
               Post what you want a partner for, and you&rsquo;ll see a few
               people who posted the same thing.
             </p>
@@ -131,13 +156,13 @@ export default async function HomePage() {
       <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
         <Link
           href="/connections"
-          className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+          className="inline-block py-3 text-sm font-medium underline text-muted-foreground"
         >
           Connections
         </Link>
         <Link
           href="/profile-setup"
-          className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+          className="inline-block py-3 text-sm font-medium underline text-muted-foreground"
         >
           Edit profile
         </Link>

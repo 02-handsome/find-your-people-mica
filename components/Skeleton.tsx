@@ -1,32 +1,39 @@
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+
 /**
  * Skeleton pieces for the loading.tsx files.
  *
- * These mirror the SHAPES of the real content — same card borders, same avatar
- * size, same number of chips — so nothing jumps when the data arrives. A
- * centred spinner would be less code and worse: it tells the user to wait
- * without telling them what for, and then the layout snaps into place.
+ * These mirror the SHAPES of the real content — same card, same avatar size,
+ * same number of chips — so nothing jumps when the data arrives. A centred
+ * spinner would be less code and worse: it tells the user to wait without
+ * telling them what for, and then the layout snaps into place.
  *
  * Every route in this app is a dynamic Server Component, so before Phase 7
  * there was no loading UI at all: a navigation blocked on a server round-trip
  * showing nothing. On mobile data that is the blank screen CLAUDE.md forbids.
+ *
+ * The primitive is shadcn's `Skeleton`; what lives here is this app's own
+ * vocabulary of shapes built from it. SkeletonCard in particular renders the
+ * REAL `Card`, so a loading card cannot drift out of step with a loaded one —
+ * it is the same component, holding placeholders.
  */
 
-/** A grey bar. Pass width/height via Tailwind classes. */
-export function SkeletonLine({ className = "h-4 w-full" }: { className?: string }) {
-  return (
-    <div
-      aria-hidden
-      className={`animate-pulse rounded bg-neutral-200 dark:bg-neutral-800 ${className}`}
-    />
-  );
+/** A bar. Pass width/height via Tailwind classes. */
+export function SkeletonLine({
+  className = "h-4 w-full",
+}: {
+  className?: string;
+}) {
+  return <Skeleton aria-hidden className={`rounded ${className}`} />;
 }
 
 export function SkeletonCircle({ size = 56 }: { size?: number }) {
   return (
-    <div
+    <Skeleton
       aria-hidden
       style={{ width: size, height: size }}
-      className="shrink-0 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800"
+      className="shrink-0 rounded-full"
     />
   );
 }
@@ -36,9 +43,9 @@ export function SkeletonChips({ count = 3 }: { count?: number }) {
   return (
     <div aria-hidden className="flex flex-wrap gap-2">
       {Array.from({ length: count }).map((_, i) => (
-        <div
+        <Skeleton
           key={i}
-          className="h-7 animate-pulse rounded-full bg-neutral-200 dark:bg-neutral-800"
+          className="h-7 rounded-full"
           // Varied widths, so it reads as text rather than as a progress bar.
           style={{ width: 56 + ((i * 23) % 40) }}
         />
@@ -47,12 +54,12 @@ export function SkeletonChips({ count = 3 }: { count?: number }) {
   );
 }
 
-/** Matches the CARD class from components/ui.ts. */
+/** The real Card, holding placeholders. */
 export function SkeletonCard({ children }: { children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
-      {children}
-    </div>
+    <Card>
+      <CardContent>{children}</CardContent>
+    </Card>
   );
 }
 

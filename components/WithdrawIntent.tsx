@@ -5,6 +5,7 @@ import { useFormStatus } from "react-dom";
 
 import { withdrawIntentAction } from "@/app/(app)/(complete)/intent/actions";
 import { FormError } from "@/components/FormError";
+import { BUTTON_NEUTRAL } from "@/components/ui";
 
 function ConfirmButton() {
   const { pending } = useFormStatus();
@@ -12,7 +13,7 @@ function ConfirmButton() {
     <button
       type="submit"
       disabled={pending}
-      className="text-sm font-medium underline text-red-700 disabled:opacity-50 dark:text-red-400"
+      className="py-3 text-sm font-medium underline text-destructive disabled:opacity-50"
     >
       {pending ? "Withdrawing…" : "Yes, withdraw"}
     </button>
@@ -28,6 +29,15 @@ function ConfirmButton() {
  * window.confirm() is untestable, looks foreign on mobile, and blocks the
  * thread. The confirm is the second tap, so the whole action stays within F2's
  * two-tap budget.
+ *
+ * The confirm row takes the full width of its wrapping flex row rather than
+ * sitting beside Edit: at 375px the question plus two answers has nowhere near
+ * enough room next to another button.
+ *
+ * "Yes, withdraw" is the one place red survives the palette change. It is the
+ * only genuinely destructive act in the product, and it only appears after a
+ * deliberate first tap — unlike Decline, it never sits next to the green
+ * primary, so there is no traffic light to read.
  */
 export function WithdrawIntent() {
   const [confirming, setConfirming] = useState(false);
@@ -40,7 +50,7 @@ export function WithdrawIntent() {
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+        className={`${BUTTON_NEUTRAL} text-sm`}
       >
         Withdraw
       </button>
@@ -48,17 +58,17 @@ export function WithdrawIntent() {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="w-full space-y-2">
       {/* Kept visible after a failure so the user can retry, rather than
           collapsing back to the initial state and losing the message. */}
       <FormError message={state.error} />
-      <form action={formAction} className="flex items-center gap-3">
+      <form action={formAction} className="flex flex-wrap items-center gap-x-4">
         <span className="text-sm">Withdraw this intent?</span>
         <ConfirmButton />
         <button
           type="button"
           onClick={() => setConfirming(false)}
-          className="text-sm font-medium underline text-neutral-600 dark:text-neutral-400"
+          className="py-3 text-sm font-medium underline text-muted-foreground"
         >
           Cancel
         </button>
