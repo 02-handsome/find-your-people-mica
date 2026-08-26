@@ -101,8 +101,6 @@
      and white cards get one. */
   --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.05);
   --shadow-primary: 0 2px 8px rgba(211, 47, 47, 0.15);
-
-  --radius: 0.5rem;
 }
 
 /* Dark, arm 1 of 2 — the OS asked for it and the user has not overridden. */
@@ -187,6 +185,27 @@
   --shadow-primary: none;
 }
 
+/* ===========================================================================
+   Theme-INDEPENDENT values. Deliberately outside the theme blocks above,
+   because those contain only what changes between light and dark.
+
+   The logo plate is the interesting one. The collage is a fully opaque
+   rectangle — measured: 0% transparent pixels — so on a dark page it would
+   read as a white box pasted on. It gets a mount instead, and the mount is
+   the SAME in both themes, which is the point: the artwork always sits on
+   paper.
+
+   The colour is sampled from the logo's own edge (its corners run #f3e9d3 to
+   #fceed3, averaging #e3d8c4), so the plate continues the collage's paper
+   rather than sitting behind it. There is no seam to notice.
+   =========================================================================== */
+:root {
+  --radius: 0.5rem;
+
+  --logo-plate: #f3e9d3;
+  --logo-plate-border: #dccfb4;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -213,6 +232,8 @@
   --color-notice-foreground: var(--notice-foreground);
   --color-label: var(--label);
   --color-track: var(--track);
+  --color-logo-plate: var(--logo-plate);
+  --color-logo-plate-border: var(--logo-plate-border);
 
   /* Restores the Geist wiring. shadcn's init overwrote this with
      `--font-sans: var(--font-sans)`, a self-reference that resolves to

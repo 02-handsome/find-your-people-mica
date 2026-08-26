@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { signInAction } from "@/app/(auth)/actions";
 import { AuthForm } from "@/components/AuthForm";
 import { AuthTabs } from "@/components/AuthTabs";
+import { BrandMark } from "@/components/BrandMark";
 import { CampusNotice } from "@/components/CampusNotice";
 import { CARD, HINT } from "@/components/ui";
 import { getAllowedEmailDomains } from "@/lib/campus-server";
@@ -17,14 +18,14 @@ export default async function LoginPage() {
   return (
     <>
       <header className="text-center">
+        <BrandMark />
+
         {/* The product name lives here. F1.6 makes "/" private, so this is the
             first screen anyone sees — it carries the branding that was on the
             Phase 1 homepage. See docs/notes.md AD-7.
 
-            Stitch puts a collage mark above this wordmark. That asset has not
-            been supplied, so the wordmark stands alone; the slot is here when
-            it arrives. */}
-        <h1 className="text-[28px] leading-[34px] font-bold tracking-[-0.02em] text-primary">
+            Stitch puts the collage mark above the wordmark. */}
+        <h1 className="mt-6 text-[28px] leading-[34px] font-bold tracking-[-0.02em] text-primary">
           Find Your People
         </h1>
         <p className={`mx-auto mt-2 max-w-[280px] ${HINT}`}>

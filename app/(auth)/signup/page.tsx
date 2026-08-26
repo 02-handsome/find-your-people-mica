@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { signUpAction } from "@/app/(auth)/actions";
 import { AuthForm } from "@/components/AuthForm";
 import { AuthTabs } from "@/components/AuthTabs";
+import { BrandMark } from "@/components/BrandMark";
 import { CampusNotice } from "@/components/CampusNotice";
 import { CARD, HINT } from "@/components/ui";
 import { getAllowedEmailDomains } from "@/lib/campus-server";
@@ -16,7 +17,9 @@ export default async function SignUpPage() {
   return (
     <>
       <header className="text-center">
-        <h1 className="text-[28px] leading-[34px] font-bold tracking-[-0.02em] text-primary">
+        <BrandMark />
+
+        <h1 className="mt-6 text-[28px] leading-[34px] font-bold tracking-[-0.02em] text-primary">
           Find Your People
         </h1>
         <p className={`mx-auto mt-2 max-w-[280px] ${HINT}`}>
