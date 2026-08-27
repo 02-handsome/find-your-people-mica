@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { signUpAction } from "@/app/(auth)/actions";
 import { AuthForm } from "@/components/AuthForm";
-import { HINT } from "@/components/ui";
-import { CAMPUS_NAME } from "@/lib/campus";
+import { AuthTabs } from "@/components/AuthTabs";
+import { BrandMark } from "@/components/BrandMark";
+import { CampusNotice } from "@/components/CampusNotice";
+import { CARD, HINT } from "@/components/ui";
 import { getAllowedEmailDomains } from "@/lib/campus-server";
 
 export const metadata: Metadata = { title: "Sign up · Find Your People" };
@@ -16,33 +17,31 @@ export default async function SignUpPage() {
   return (
     <>
       <header className="text-center">
-        <h1 className="text-3xl font-semibold tracking-tight">
-          Create your account
+        <BrandMark />
+
+        <h1 className="mt-6 text-[28px] leading-[34px] font-bold tracking-[-0.02em] text-primary">
+          Find Your People
         </h1>
-        <p className={`mt-2 ${HINT}`}>
-          {/* Stated up front rather than only as a rejection, so nobody types a
-              gmail address and gets bounced. */}
-          {CAMPUS_NAME} students only
-          {domains.length > 0
-            ? `. Use your ${domains.map((d) => `@${d}`).join(" or ")} address.`
-            : "."}
+        <p className={`mx-auto mt-2 max-w-[280px] ${HINT}`}>
+          Connect with students who share your interests and schedule.
         </p>
       </header>
 
-      <AuthForm
-        action={signUpAction}
-        submitLabel="Create account"
-        pendingLabel="Creating account…"
-        autoCompletePassword="new-password"
-        passwordHint="At least 8 characters."
-      />
+      {/* Stated up front rather than only as a rejection, so nobody types a
+          gmail address and gets bounced. */}
+      <CampusNotice domains={domains} />
 
-      <p className="text-center text-sm">
-        Already have an account?{" "}
-        <Link href="/login" className="font-medium underline">
-          Log in
-        </Link>
-      </p>
+      <AuthTabs active="signup" />
+
+      <div className={CARD}>
+        <AuthForm
+          action={signUpAction}
+          submitLabel="Create Account"
+          pendingLabel="Creating account…"
+          autoCompletePassword="new-password"
+          passwordHint="Must be at least 8 characters."
+        />
+      </div>
     </>
   );
 }

@@ -6,9 +6,11 @@ thing. Contact details are revealed only after both sides agree.
 
 **Live URL:** https://find-your-people-mica.vercel.app
 
-**Build status:** Phase 8 of 8 complete — submission ready. See `docs/PRD.md`
-section 9 for the build sequence, and `docs/notes.md` for every architecture
-decision with its reasoning and what it cost.
+**Build status:** Phase 8 of 8 complete, plus a full UI rebuild against a
+Google Stitch design export — see `docs/notes.md` AD-30 and the export itself
+under `docs/stitch-export/`. `docs/PRD.md` section 9 has the build sequence,
+and `docs/notes.md` has every architecture decision with its reasoning and
+what it cost.
 
 ---
 
@@ -36,19 +38,19 @@ listed under Test accounts below.
 | 0:00 | Open the live URL. It lands on `/login` | F1.6 — every route except login and signup is private |
 | 0:08 | The campus notice and the test credentials on the login card | F1.2 and S5. The notice is rendered from the database allowlist, so it cannot contradict what signup actually accepts |
 | 0:15 | Log in as **test.two** → home | Avatar, the active intent with its countdown (F2.3), and your own contact handle with the line saying when it gets shared |
-| 0:28 | **See your matches** | Three ranked cards (F3.3) — name, year, tags, days, hours. The score is deliberately not rendered |
+| 0:28 | **Matches** in the bottom nav | Three ranked cards (F3.3) — name, year, tags, days, hours. The score is deliberately not rendered |
 | 0:40 | **Connect** on Test One's card | The card changes to "Request sent" and cannot be sent again (F4.2) |
 | 0:50 | Log out → log in as **test.one** | |
 | 1:00 | Home shows "1 person wants to connect" | F4.3 — the sender's name, avatar, tags and intent details, and no contact handle. Deciding whether to accept must not require already holding what accepting grants |
 | 1:10 | Read the line under the buttons, then **Accept** | *"Accepting shares your contact handle with them, and theirs with you."* The one irreversible action in the product, stated at the moment of the decision |
-| 1:20 | **Connections** | Test Two's number, revealed (F4.5, F4.7) |
-| 1:28 | Back as test.two → **Connections** | The same reveal, the other way round. There is one accepted row, not one per direction, so neither party can be revealed without the other |
+| 1:20 | **Connections** in the bottom nav | Test Two's number, revealed (F4.5, F4.7) |
+| 1:28 | Back as test.two → **Connections** tab | The same reveal, the other way round. There is one accepted row, not one per direction, so neither party can be revealed without the other |
 
 ### Second clip — CRUD (PRD S3), about 30 seconds
 
 | Time | On screen | What it demonstrates |
 | --- | --- | --- |
-| 0:00 | Home → **Edit** on the intent card | Update (F2.4) |
+| 0:00 | Home → **Edit Intent** on the intent card | Update (F2.4) |
 | 0:08 | Change a day or the time window → **Save changes** | The countdown does not reset. F2.4 is explicit that `expires_at` survives an edit |
 | 0:16 | **Withdraw** → **Yes, withdraw** | Delete (F2.5), behind an inline confirm rather than `window.confirm()` — which blocks the thread, cannot be tested, and looks foreign on mobile |
 | 0:22 | The designed "No active intent" empty state → **Post an intent** | Create (F2.1). Every operation is two taps from home |
@@ -166,6 +168,11 @@ Designed at 375px first, then scaled up. Route groups do not appear in URLs, so
 | 4 | Home | `/` | `app/(app)/(complete)/page.tsx` |
 | 5 | Matches | `/matches` | `app/(app)/(complete)/matches/page.tsx` |
 | 6 | Connections | `/connections` | `app/(app)/(complete)/connections/page.tsx` |
+
+Since the Stitch rebuild, Home, Matches and Connections are reached through a
+bottom tab bar rather than links at the foot of each page, and /profile-setup
+sits outside that shell because the completeness guard would bounce you
+straight back out of anywhere it led.
 
 Every one has a `loading.tsx` skeleton beside it that mirrors the real layout,
 and every list has a designed empty state — `CLAUDE.md` forbids a blank screen

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>Matches - Find Your People</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "background": "#f9f9f9",
+                "secondary-fixed-dim": "#c6c6c9",
+                "on-tertiary-fixed": "#1a1c1c",
+                "tertiary-fixed": "#e2e2e2",
+                "on-primary-fixed": "#410003",
+                "on-error": "#ffffff",
+                "inverse-primary": "#ffb3ac",
+                "on-secondary-container": "#636467",
+                "surface-bright": "#f9f9f9",
+                "text-main": "#1A1C1E",
+                "on-primary-fixed-variant": "#930010",
+                "on-surface-variant": "#5b403d",
+                "surface-tint": "#ba1a20",
+                "surface-container-lowest": "#ffffff",
+                "outline-variant": "#e4beba",
+                "surface-variant": "#e2e2e2",
+                "primary-fixed-dim": "#ffb3ac",
+                "on-secondary-fixed": "#1a1c1e",
+                "surface-container": "#eeeeee",
+                "tertiary": "#565858",
+                "surface-container-high": "#e8e8e8",
+                "surface": "#f9f9f9",
+                "text-muted": "#616161",
+                "on-tertiary-fixed-variant": "#454747",
+                "surface-container-low": "#f3f3f4",
+                "error-container": "#ffdad6",
+                "on-tertiary": "#ffffff",
+                "tertiary-container": "#6e7070",
+                "inverse-on-surface": "#f0f1f1",
+                "on-error-container": "#93000a",
+                "on-surface": "#1a1c1c",
+                "primary": "#af101a",
+                "primary-fixed": "#ffdad6",
+                "error-vibrant": "#B71C1C",
+                "secondary-fixed": "#e2e2e5",
+                "on-secondary-fixed-variant": "#454749",
+                "on-primary": "#ffffff",
+                "outline": "#8f6f6c",
+                "border-subtle": "#E0E0E0",
+                "surface-container-highest": "#e2e2e2",
+                "inverse-surface": "#2f3131",
+                "error": "#ba1a1a",
+                "on-background": "#1a1c1c",
+                "on-primary-container": "#fff2f0",
+                "surface-dim": "#F1F1F1",
+                "secondary-container": "#e2e2e5",
+                "tertiary-fixed-dim": "#c6c6c7",
+                "primary-container": "#d32f2f",
+                "on-secondary": "#ffffff",
+                "on-tertiary-container": "#f4f4f4",
+                "secondary": "#5d5e61"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+        },
+        "spacing": {
+                "gutter-md": "16px",
+                "card-gap": "16px",
+                "stack-sm": "12px",
+                "stack-md": "24px",
+                "base": "8px",
+                "container-padding": "20px",
+                "safe": "env(safe-area-inset-bottom)"
+        },
+        "fontFamily": {
+                "body-sm": [
+                        "Inter"
+                ],
+                "label-caps": [
+                        "JetBrains Mono"
+                ],
+                "headline-lg": [
+                        "Hanken Grotesk"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Hanken Grotesk"
+                ],
+                "button-text": [
+                        "Hanken Grotesk"
+                ],
+                "headline-md": [
+                        "Hanken Grotesk"
+                ]
+        },
+        "fontSize": {
+                "body-sm": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-caps": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-lg": [
+                        "28px",
+                        {
+                                "lineHeight": "34px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "24px",
+                        {
+                                "lineHeight": "30px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "button-text": [
+                        "16px",
+                        {
+                                "lineHeight": "16px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-md": [
+                        "22px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "600"
+                        }
+                ]
+        }
+},
+    },
+  }
+</script>
+<style>
+        .material-symbols-outlined {
+          font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 16px); }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-lg antialiased min-h-screen pb-24">
+<!-- Mouse Trailer -->
+<div class="fixed w-[60px] h-[60px] rounded-full pointer-events-none z-[9999] opacity-0 transition-opacity duration-300 transform -translate-x-1/2 -translate-y-1/2 motion-reduce:hidden" id="mouse-trailer" style="background: radial-gradient(circle, rgba(211,47,47,0.15) 0%, rgba(211,47,47,0) 70%);"></div>
+<!-- Header -->
+<header class="fixed top-0 w-full z-50 bg-background dark:bg-on-surface flex items-center justify-between px-container-padding h-16 max-w-md mx-auto left-0 right-0">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high border border-border-subtle flex-shrink-0">
+<img alt="Student Profile Photo" class="w-full h-full object-cover" data-alt="A clean, minimalist portrait photo of a university student with a bright, welcoming smile. The background is a soft, out-of-focus campus setting in light mode with neutral tones and soft natural lighting. The overall style is modern, approachable, and professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuscaqY5rLtPG1nGHc9wbIeKoPsatkD63k7gi0-3CmhwVwZY8hOPrNo1x64Q5lKGY-a-kuHU25nCYypbD3HSIgIJ1AuzxmoAvrmq0UAaiCm0xQZKWPv3D_r1jDeC6Onp6HlgqO-mzGLQOIDnWzSQBAAF-cwOe25BMPINilhAeRqFC1QPUeEEL40aPLNla1QSqgH4lcxdxAqVtVxDmQMaP0nztrdmhdkJ5pLADsqTXmkECNCEAklNNkHg"/>
+</div>
+<h1 class="font-headline-md text-headline-md text-primary dark:text-primary-fixed">Find Your People</h1>
+<button class="w-10 h-10 flex items-center justify-center text-primary dark:text-primary-fixed rounded-full hover:bg-error-container transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+</button>
+</header>
+<!-- Main Canvas -->
+<main class="pt-20 px-container-padding max-w-md mx-auto flex flex-col gap-stack-md h-[calc(100vh-80px)] overflow-hidden">
+<div class="flex items-center justify-between mb-2 shrink-0">
+<h2 class="font-headline-md text-headline-md text-on-surface">Your Top Matches</h2>
+<span class="font-body-sm text-text-muted bg-surface-container-high px-3 py-1 rounded-full">3 Nearby</span>
+</div>
+<!-- Snap Scroll Container for Cards -->
+<div class="flex flex-col gap-card-gap overflow-y-auto hide-scrollbar pb-8 snap-y snap-mandatory flex-grow relative">
+<!-- Match Card 1 -->
+<article class="bg-surface-container-lowest border border-border-subtle rounded-xl p-5 shadow-[0px_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-stack-sm snap-start shrink-0 relative overflow-hidden">
+<div class="flex items-start gap-4">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-surface-container-high border-2 border-primary-container shrink-0">
+<img alt="Match Avatar" class="w-full h-full object-cover" data-alt="A modern, bright portrait of a female university student studying. She is sitting in a well-lit, contemporary campus library with soft, neutral tones and a calm atmosphere. The lighting is bright and even, fitting a low-status-cost, professional light-mode aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBdjpqbqm-ggzaWIJ_Z6oj7BYQ7HysJD60Qf17399K_O219oeixdys8HC3cUgqa9titlTPAn7BzJmh83GW-KHKiuaoK1ATXd0quv_tYe0FViZYzLQwSNsM9tKi0S0Dm3Ywz1h3xN-GQt2pOj6U5FmJ4YyTzg1xU0ZQ6uCG41QEQGAF2CgXg_NB_tP3D0RHB95FeW-ISDceLYasNAlMFL2Q2nWGpn5xj1qDKpproqaZ0z3zAukl9oZaYPQ"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline-md text-headline-md text-on-surface leading-tight">Sarah J.</h3>
+<p class="font-body-sm text-text-muted">Junior • Comp Sci</p>
+</div>
+<div class="bg-error-container text-primary-container px-2 py-1 rounded-md flex items-center gap-1 shrink-0">
+<span class="material-symbols-outlined text-[16px]" data-icon="code">code</span>
+<span class="font-label-caps text-label-caps">PRO</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="bg-[#F1F5F9] text-text-muted font-body-sm text-body-sm px-3 py-1 rounded-full">Morning Person</span>
+<span class="bg-[#F1F5F9] text-text-muted font-body-sm text-body-sm px-3 py-1 rounded-full">Coffee First</span>
+<span class="bg-[#F1F5F9] text-text-muted font-body-sm text-body-sm px-3 py-1 rounded-full">Focus Blocks</span>
+</div>
+<div class="border-t border-border-subtle my-2"></div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-body-sm text-on-surface-variant">Shared Study Days</span>
+<span class="font-label-caps text-label-caps text-primary-container">7-9 AM</span>
+</div>
+<div class="flex justify-between w-full mb-4">
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-primary text-on-primary">M</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">T</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-primary text-on-primary">W</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">T</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-primary text-on-primary">F</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">S</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">S</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary font-button-text text-button-text py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary active:scale-[0.98] transition-all shadow-sm">
+<span class="material-symbols-outlined" data-icon="waving_hand">waving_hand</span>
+                    Connect
+                </button>
+</article>
+<!-- Match Card 2 -->
+<article class="bg-surface-container-lowest border border-border-subtle rounded-xl p-5 shadow-[0px_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-stack-sm snap-start shrink-0 relative overflow-hidden">
+<div class="flex items-start gap-4">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-surface-container-high border border-border-subtle shrink-0">
+<img alt="Match Avatar" class="w-full h-full object-cover" data-alt="A bright, minimalist portrait of a male university student in a casual campus café setting. The background is soft and slightly blurred with neutral, light-mode colors. The student looks friendly and approachable. Professional, high-key lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuANmV3Jow5raPhd1ZZL3SDfwzOiBxeaRiuSINFnx6d8SDbARR7gbJ8xcPD4B_ENuLtf1Qcd_rnOv6nGZwgbTwVes-d4-ms2cvK7_MkuMRQPiOFdNMK6xo7cHWJmHrCpd-jITiNqzaU8Fix0_zLKFUcuyWPt_t0Rsz9n8tVOKc90MS3UgSygXfb1w6BOTYx0fuHEBgEjj09S4aFRjjTWTxwLsualkxgM40e6KR0w9UWYwZ9giBi3wo1VYg"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline-md text-headline-md text-on-surface leading-tight">Marcus T.</h3>
+<p class="font-body-sm text-text-muted">Senior • Design</p>
+</div>
+<div class="bg-surface-container text-on-surface-variant px-2 py-1 rounded-md flex items-center gap-1 shrink-0">
+<span class="material-symbols-outlined text-[16px]" data-icon="palette">palette</span>
+<span class="font-label-caps text-label-caps">INT</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="bg-[#F1F5F9] text-text-muted font-body-sm text-body-sm px-3 py-1 rounded-full">Figma Fanatic</span>
+<span class="bg-[#F1F5F9] text-text-muted font-body-sm text-body-sm px-3 py-1 rounded-full">Quiet Space</span>
+</div>
+<div class="border-t border-border-subtle my-2"></div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-body-sm text-on-surface-variant">Shared Work Days</span>
+<span class="font-label-caps text-label-caps text-primary-container">6-8 PM</span>
+</div>
+<div class="flex justify-between w-full mb-4">
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">M</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-primary text-on-primary">T</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">W</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-primary text-on-primary">T</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">F</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">S</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">S</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary font-button-text text-button-text py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary active:scale-[0.98] transition-all shadow-sm">
+<span class="material-symbols-outlined" data-icon="waving_hand">waving_hand</span>
+                    Connect
+                </button>
+</article>
+<!-- Match Card 3 -->
+<article class="bg-surface-container-lowest border border-border-subtle rounded-xl p-5 shadow-[0px_4px_12px_rgba(0,0,0,0.05)] flex flex-col gap-stack-sm snap-start shrink-0 relative overflow-hidden">
+<div class="flex items-start gap-4">
+<div class="w-16 h-16 rounded-full overflow-hidden bg-surface-container-high border border-border-subtle shrink-0">
+<img alt="Match Avatar" class="w-full h-full object-cover" data-alt="A warm, approachable portrait of a non-binary university student on a green campus quad. The lighting is soft natural sunlight, enhancing the light-mode, optimistic tone of the interface. The background is minimalist and uncluttered." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCfaLB3n_JkdzMSVYJZlp0vbBXRTQ8CUMyQxqiBjVLdmsqH6_GUUGMoOYvOmgS7s_J9apg9e4lTVQLOlQF_nb21CqlRaYVuxJlK4hHxIfnu_V83ZZogY439ZjTQmgcfHn2yKh5UhKdk0kp1qtVjAkRKo86gXgxs74OHuOGxSkXTLosk_O11RcMW23mdBqiajzTMzT6c7jvwLSeXVTOAsv91zTc8blLoZy4wOUfFWadAzawhH8fxtgGE2Q"/>
+</div>
+<div class="flex-grow">
+<h3 class="font-headline-md text-headline-md text-on-surface leading-tight">Alex R.</h3>
+<p class="font-body-sm text-text-muted">Sophomore • Bio</p>
+</div>
+<div class="bg-error-container text-primary-container px-2 py-1 rounded-md flex items-center gap-1 shrink-0">
+<span class="material-symbols-outlined text-[16px]" data-icon="science">science</span>
+<span class="font-label-caps text-label-caps">BEG</span>
+</div>
+</div>
+<div class="flex flex-wrap gap-2 mt-1">
+<span class="bg-[#F1F5F9] text-text-muted font-body-sm text-body-sm px-3 py-1 rounded-full">Lab Partner Search</span>
+<span class="bg-[#F1F5F9] text-text-muted font-body-sm text-body-sm px-3 py-1 rounded-full">Weekend Hikes</span>
+</div>
+<div class="border-t border-border-subtle my-2"></div>
+<div class="flex justify-between items-center mb-2">
+<span class="font-body-sm text-on-surface-variant">Shared Free Days</span>
+<span class="font-label-caps text-label-caps text-primary-container">Afternoons</span>
+</div>
+<div class="flex justify-between w-full mb-4">
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">M</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">T</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">W</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">T</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-surface-container text-text-muted">F</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-primary text-on-primary">S</div>
+<div class="w-8 h-8 rounded-full flex items-center justify-center font-label-caps text-[10px] bg-primary text-on-primary">S</div>
+</div>
+<button class="w-full bg-primary-container text-on-primary font-button-text text-button-text py-3 rounded-lg flex items-center justify-center gap-2 hover:bg-primary active:scale-[0.98] transition-all shadow-sm">
+<span class="material-symbols-outlined" data-icon="waving_hand">waving_hand</span>
+                    Connect
+                </button>
+</article>
+<!-- Spacer for bottom scroll -->
+<div class="h-8 shrink-0 w-full"></div>
+</div>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 py-3 pb-safe bg-surface-container-lowest dark:bg-inverse-surface border-t border-border-subtle dark:border-outline shadow-md z-50">
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim scale-95 active:scale-90 transition-transform duration-150 p-2 rounded-lg hover:bg-secondary-container/50 dark:hover:bg-on-secondary-fixed-variant" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="home">home</span>
+<span class="font-label-caps text-label-caps">Home</span>
+</a>
+<!-- Active State: Matches -->
+<a class="flex flex-col items-center justify-center text-primary dark:text-primary-fixed font-bold scale-95 active:scale-90 transition-transform duration-150 p-2 rounded-lg hover:bg-secondary-container/50 dark:hover:bg-on-secondary-fixed-variant relative" href="#">
+<!-- Active indicator dot -->
+<div class="absolute top-1 right-2 w-2 h-2 bg-error rounded-full"></div>
+<span class="material-symbols-outlined mb-1" data-icon="group" data-weight="fill" style="font-variation-settings: 'FILL' 1;">group</span>
+<span class="font-label-caps text-label-caps">Matches</span>
+</a>
+<a class="flex flex-col items-center justify-center text-on-secondary-container dark:text-secondary-fixed-dim scale-95 active:scale-90 transition-transform duration-150 p-2 rounded-lg hover:bg-secondary-container/50 dark:hover:bg-on-secondary-fixed-variant" href="#">
+<span class="material-symbols-outlined mb-1" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-label-caps text-label-caps">Connections</span>
+</a>
+</nav>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const trailer = document.getElementById('mouse-trailer');
+        
+        // Respect prefers-reduced-motion
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReducedMotion) return;
+
+        let mouseX = 0, mouseY = 0;
+        let trailerX = 0, trailerY = 0;
+        let isMoving = false;
+        let timeout;
+
+        const animate = () => {
+            // Smoothly interpolate towards mouse position
+            trailerX += (mouseX - trailerX) * 0.15;
+            trailerY += (mouseY - trailerY) * 0.15;
+            
+            trailer.style.left = `${trailerX}px`;
+            trailer.style.top = `${trailerY}px`;
+            
+            if (isMoving) {
+                requestAnimationFrame(animate);
+            }
+        };
+
+        window.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            
+            if (!isMoving) {
+                trailerX = mouseX;
+                trailerY = mouseY;
+                trailer.style.left = `${trailerX}px`;
+                trailer.style.top = `${trailerY}px`;
+                trailer.classList.remove('opacity-0');
+                isMoving = true;
+                animate();
+            }
+            
+            clearTimeout(timeout);
+            timeout = setTimeout(() => {
+                isMoving = false;
+                trailer.classList.add('opacity-0');
+            }, 1000); // Hide after 1 second of inactivity
+        });
+        
+        window.addEventListener('mouseout', () => {
+             isMoving = false;
+             trailer.classList.add('opacity-0');
+        });
+    });
+</script>
+</body></html>

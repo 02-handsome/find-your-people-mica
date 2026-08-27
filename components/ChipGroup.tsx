@@ -54,6 +54,8 @@ export function ChipGroup({
   counter,
   ariaLabel,
   variant = "chip",
+  heading,
+  description,
 }: {
   name: string;
   options: readonly (string | ChipOption)[];
@@ -66,6 +68,19 @@ export function ChipGroup({
   counter?: (count: number) => string;
   ariaLabel?: string;
   variant?: "chip" | "grid";
+  /**
+   * The field label. When given, it renders as a row with the counter pushed
+   * to the right — Stitch's "YOUR INTERESTS ... 3/3 Selected" — instead of the
+   * counter sitting under the chips.
+   */
+  heading?: React.ReactNode;
+  /**
+   * Sits BETWEEN the heading and the chips, never after them. Both pickers
+   * that use it are explaining that the field ranks rather than filters
+   * (AD-9, AD-19), and that has to set an expectation for the choice rather
+   * than annotate it once it has been made.
+   */
+  description?: React.ReactNode;
 }) {
   const items: ChipOption[] = options.map((option) =>
     typeof option === "string" ? { value: option, label: option } : option
@@ -89,6 +104,21 @@ export function ChipGroup({
 
   return (
     <div>
+      {heading ? (
+        <div className="mb-1.5 flex items-end justify-between gap-3">
+          <span className="label-caps text-label">{heading}</span>
+          {counter ? (
+            <span className="text-sm text-muted-foreground" aria-live="polite">
+              {counter(selected.length)}
+            </span>
+          ) : null}
+        </div>
+      ) : null}
+
+      {description ? (
+        <div className="mb-3 text-sm text-muted-foreground">{description}</div>
+      ) : null}
+
       {single ? (
         // Always rendered, empty when nothing is chosen, so the server sees ""
         // and returns its own message rather than the field vanishing silently.
@@ -110,8 +140,17 @@ export function ChipGroup({
       >
         {items.map(({ value, label, icon }) => {
           const on = selected.includes(value);
-          // Unselected chips go disabled at the limit, so the rule is visible
-          // rather than silently swallowing the next tap.
+          // At the limit every unselected chip is refused, so the next tap is
+          // not silently swallowed — but they stay READABLE.
+          //
+          // They used to fade to text-muted-foreground/60, which measured
+          // 2.55:1 in light. AD-29 kept that on the grounds that disabled
+          // controls carry no contrast requirement, and that is true — but it
+          // is the wrong test. Once three tags are chosen, ELEVEN of fourteen
+          // become unreadable at precisely the moment you need to read them to
+          // decide what to swap. Exempt from conformance is not the same as
+          // usable. The counter states the rule; the chips do not have to
+          // disappear to prove it.
           const disabled = !single && !on && atLimit;
 
           if (variant === "grid") {
@@ -131,7 +170,7 @@ export function ChipGroup({
                   (on
                     ? "border-primary bg-primary text-primary-foreground"
                     : disabled
-                      ? "border-border text-muted-foreground/60"
+                      ? "border-border bg-card text-muted-foreground cursor-not-allowed"
                       : "border-border bg-card hover:bg-muted")
                 }
               >
@@ -150,11 +189,14 @@ export function ChipGroup({
               aria-pressed={on}
               disabled={disabled}
               className={
-                "rounded-full border px-3 py-1.5 text-sm transition-colors " +
+                // Stitch sizes their tag pills h-10 / px-4. Taller than the
+                // 32px these were, and a materially better tap target.
+                "inline-flex h-10 items-center rounded-full border px-4 text-sm " +
+                "transition-colors " +
                 (on
                   ? "border-primary bg-primary text-primary-foreground"
                   : disabled
-                    ? "border-border text-muted-foreground/60"
+                    ? "border-border text-muted-foreground cursor-not-allowed"
                     : "border-input hover:bg-muted")
               }
             >
@@ -164,7 +206,7 @@ export function ChipGroup({
         })}
       </div>
 
-      {counter ? (
+      {counter && !heading ? (
         // aria-live so the count is announced as chips are toggled.
         <p className={`mt-2 ${HINT}`} aria-live="polite">
           {counter(selected.length)}

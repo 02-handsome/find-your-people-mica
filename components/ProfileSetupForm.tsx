@@ -1,10 +1,13 @@
 "use client";
 
+import { ArrowRight, Lock, Smartphone } from "lucide-react";
 import { useActionState } from "react";
 
 import { saveProfileAction } from "@/app/(app)/profile-setup/actions";
+import { Avatar } from "@/components/Avatar";
 import { ChipGroup } from "@/components/ChipGroup";
 import { FormError } from "@/components/FormError";
+import { StickyActions } from "@/components/StickyActions";
 import { SubmitButton } from "@/components/SubmitButton";
 import { HINT, INPUT, LABEL } from "@/components/ui";
 import {
@@ -21,6 +24,17 @@ import {
  * React 19 resets uncontrolled fields after a form action completes, so the
  * text inputs read `state.values` (echoed back by the action) before falling
  * back to the stored profile, and the chip groups hold their own state.
+ *
+ * TWO DEPARTURES FROM THE STITCH SCREEN, both forced by what the data allows:
+ *
+ * Their header has an avatar with a camera badge. Photo upload is a PRD
+ * non-goal and `avatar_url` is generated from the user id by a trigger, so the
+ * avatar is shown but not offered for editing — with a line saying why, since
+ * an avatar you cannot change is otherwise just a broken-looking button.
+ *
+ * Their "Program & Year" is a free-text field. Ours is a fixed list: `year` is
+ * validated against YEARS by the Server Action, and a text box would invite
+ * input the save would then reject.
  */
 export function ProfileSetupForm({
   profile,
@@ -36,12 +50,23 @@ export function ProfileSetupForm({
   const submitted = state.values;
 
   return (
-    <form action={formAction} className="mt-6 space-y-6">
+    // pb clears the fixed action bar.
+    <form action={formAction} className="space-y-6 pb-32">
       <FormError message={state.error} />
+
+      <div className="flex items-center gap-4">
+        <Avatar src={profile.avatar_url} name={profile.name} size={64} />
+        <p className={HINT}>
+          {/* F1.4 — generated from your account id, never uploaded. Saying so
+              stops the avatar reading as an upload button that does nothing. */}
+          Your picture is generated from your account. There&rsquo;s nothing to
+          upload.
+        </p>
+      </div>
 
       <div>
         <label className={LABEL} htmlFor="name">
-          Your name
+          Full name
         </label>
         <input
           id="name"
@@ -51,78 +76,92 @@ export function ProfileSetupForm({
           defaultValue={submitted?.name ?? profile.name ?? ""}
           autoComplete="name"
           autoCapitalize="words"
-          placeholder="As people would know you"
+          placeholder="e.g. Aarav Mehta"
           className={INPUT}
         />
       </div>
 
-      <div>
-        <span className={LABEL}>Year</span>
-        <ChipGroup
-          name="year"
-          options={YEARS}
-          initial={
-            (submitted?.year ?? profile.year) ? [submitted?.year ?? profile.year!] : []
-          }
-          single
-          ariaLabel="Year"
-        />
-      </div>
+      <ChipGroup
+        name="year"
+        heading="Program & year"
+        options={YEARS}
+        initial={
+          (submitted?.year ?? profile.year)
+            ? [submitted?.year ?? profile.year!]
+            : []
+        }
+        single
+        ariaLabel="Year"
+      />
 
-      <div>
-        <span className={LABEL}>
-          Pick {TAGS_REQUIRED} things you&rsquo;re into
-        </span>
-        {/* Placed ABOVE the chips, not below: it sets an expectation for the
-            choice rather than annotating it afterwards.
+      <ChipGroup
+        name="tags"
+        heading="Your interests"
+        /* Tags are a RANKING signal, never a filter (docs/notes.md AD-9).
+           F3.1 builds the candidate pool from `activity`, and F3.2 hard-filters
+           on a shared day and an overlapping time window. Tags appear only in
+           the score, as `overlapping_tags x 2`. Without this line, choosing
+           "Films" reads as a promise to find film people — and the app would
+           silently never deliver on it. */
+        description={
+          <>
+            These don&rsquo;t decide who you match with — your activity and
+            times do. They set the order.
+          </>
+        }
+        options={TAGS}
+        initial={submitted?.tags ?? profile.tags ?? []}
+        max={TAGS_REQUIRED}
+        counter={(n) => `${n}/${TAGS_REQUIRED} selected`}
+        ariaLabel="Interests"
+      />
 
-            Tags are a RANKING signal, never a filter (docs/notes.md AD-9).
-            F3.1 builds the candidate pool from `activity`, and F3.2 hard-filters
-            on a shared day and an overlapping time window. Tags appear only in
-            the score, as `overlapping_tags x 2`. Without this line, choosing
-            "Films" reads as a promise to find film people — and the app would
-            silently never deliver on it. */}
-        <p className={`mb-3 ${HINT}`}>
-          These don&rsquo;t decide who you match with — your activity and times
-          do. They set the order.
-        </p>
-        <ChipGroup
-          name="tags"
-          options={TAGS}
-          initial={submitted?.tags ?? profile.tags ?? []}
-          max={TAGS_REQUIRED}
-          counter={(n) => `${n} of ${TAGS_REQUIRED} chosen`}
-          ariaLabel="Interests"
-        />
-      </div>
+      <hr className="border-border" />
 
       <div>
         <label className={LABEL} htmlFor="contact_handle">
-          Phone or WhatsApp number
+          Contact handle
         </label>
-        <input
-          id="contact_handle"
-          name="contact_handle"
-          type="tel"
-          required
-          defaultValue={
-            submitted?.contactHandle ?? profile.contact_handle ?? ""
-          }
-          inputMode="numeric"
-          autoComplete="tel"
-          placeholder="10-digit mobile number"
-          className={INPUT}
-        />
-        <p className={`mt-1.5 ${HINT}`}>
-          {/* The product's core promise, stated at the exact moment the user is
-              asked to hand over a phone number. PRD N4. */}
-          Hidden until you and someone else both accept a request.
-        </p>
+        <div className="relative">
+          <Smartphone
+            aria-hidden
+            className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted-foreground"
+            strokeWidth={1.75}
+          />
+          <input
+            id="contact_handle"
+            name="contact_handle"
+            type="tel"
+            required
+            defaultValue={
+              submitted?.contactHandle ?? profile.contact_handle ?? ""
+            }
+            inputMode="numeric"
+            autoComplete="tel"
+            placeholder="10-digit mobile number"
+            className={`${INPUT} pl-11`}
+          />
+        </div>
+
+        {/* The product's core promise, stated at the exact moment the user is
+            asked to hand over a phone number. PRD N4. Stitch gives this a
+            solid accent panel, which is right: it is the one reassurance that
+            has to be read rather than skimmed. */}
+        <div className="mt-3 flex items-start gap-3 rounded-lg bg-primary p-4 text-primary-foreground">
+          <Lock aria-hidden className="mt-0.5 size-5 shrink-0" strokeWidth={2} />
+          <p className="text-sm leading-5">
+            Your contact handle stays hidden. It is revealed only when you and
+            someone else both accept a request.
+          </p>
+        </div>
       </div>
 
-      <SubmitButton pendingLabel="Saving…">
-        {editing ? "Save changes" : "Save and continue"}
-      </SubmitButton>
+      <StickyActions>
+        <SubmitButton pendingLabel="Saving…">
+          {editing ? "Save changes" : "Complete setup"}
+          <ArrowRight aria-hidden className="size-5" strokeWidth={2} />
+        </SubmitButton>
+      </StickyActions>
     </form>
   );
 }

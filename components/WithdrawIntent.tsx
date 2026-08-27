@@ -5,7 +5,6 @@ import { useFormStatus } from "react-dom";
 
 import { withdrawIntentAction } from "@/app/(app)/(complete)/intent/actions";
 import { FormError } from "@/components/FormError";
-import { BUTTON_NEUTRAL } from "@/components/ui";
 
 function ConfirmButton() {
   const { pending } = useFormStatus();
@@ -13,7 +12,7 @@ function ConfirmButton() {
     <button
       type="submit"
       disabled={pending}
-      className="py-3 text-sm font-medium underline text-destructive disabled:opacity-50"
+      className="py-3 text-sm font-semibold underline text-destructive disabled:opacity-50"
     >
       {pending ? "Withdrawing…" : "Yes, withdraw"}
     </button>
@@ -34,12 +33,12 @@ function ConfirmButton() {
  * sitting beside Edit: at 375px the question plus two answers has nowhere near
  * enough room next to another button.
  *
- * "Yes, withdraw" is the one place red survives the palette change. It is the
- * only genuinely destructive act in the product, and it only appears after a
- * deliberate first tap — unlike Decline, it never sits next to the green
- * primary, so there is no traffic light to read.
+ * "Yes, withdraw" is the one place red survives as a warning rather than as
+ * the brand. It is the only genuinely destructive act in the product, and it
+ * only appears after a deliberate first tap — unlike Decline, it never sits
+ * next to the primary button, so there is no traffic light to read.
  */
-export function WithdrawIntent() {
+export function WithdrawIntent({ className = "" }: { className?: string }) {
   const [confirming, setConfirming] = useState(false);
   const [state, formAction] = useActionState(withdrawIntentAction, {
     error: null,
@@ -50,7 +49,7 @@ export function WithdrawIntent() {
       <button
         type="button"
         onClick={() => setConfirming(true)}
-        className={`${BUTTON_NEUTRAL} text-sm`}
+        className={className}
       >
         Withdraw
       </button>

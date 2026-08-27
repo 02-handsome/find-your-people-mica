@@ -6,30 +6,47 @@ import {
   SkeletonScreen,
 } from "@/components/Skeleton";
 
-/** Connections (screen 6). */
+/**
+ * Connections (screen 6). Mirrors the real card: avatar row with the MATCHED
+ * pill, a rule, then the revealed handle and its action.
+ */
 export default function ConnectionsLoading() {
   return (
     <SkeletonScreen label="Loading your connections">
-      <SkeletonLine className="h-7 w-36" />
-      <SkeletonLine className="mt-3 h-4 w-full" />
+      <div className="flex flex-col gap-6">
+        <div className="space-y-2">
+          <SkeletonLine className="h-6 w-40" />
+          <SkeletonLine className="h-4 w-full" />
+        </div>
 
-      <div className="mt-8 space-y-4">
-        {[0, 1].map((i) => (
-          <SkeletonCard key={i}>
-            <div className="flex items-start gap-3">
-              <SkeletonCircle size={44} />
-              <div className="flex-1 space-y-2">
-                <SkeletonLine className="h-4 w-28" />
-                <SkeletonLine className="h-3.5 w-16" />
+        <div className="space-y-4">
+          {[0, 1].map((i) => (
+            <SkeletonCard key={i}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex flex-1 items-center gap-3">
+                  <SkeletonCircle size={48} />
+                  <div className="flex-1 space-y-2">
+                    <SkeletonLine className="h-5 w-28" />
+                    <SkeletonLine className="h-4 w-36" />
+                  </div>
+                </div>
+                <SkeletonLine className="h-6 w-24 rounded-full" />
               </div>
-            </div>
-            <div className="mt-3">
-              <SkeletonChips count={3} />
-            </div>
-            {/* The contact block — the reason the screen exists. */}
-            <SkeletonLine className="mt-4 h-16 w-full rounded-lg" />
-          </SkeletonCard>
-        ))}
+
+              <div className="mt-3">
+                <SkeletonChips count={3} />
+              </div>
+
+              <hr className="my-4 border-border" />
+
+              <div className="flex items-center gap-3">
+                <SkeletonCircle size={40} />
+                <SkeletonLine className="h-8 w-40" />
+              </div>
+              <SkeletonLine className="mt-4 h-12 w-full rounded-lg" />
+            </SkeletonCard>
+          ))}
+        </div>
       </div>
     </SkeletonScreen>
   );

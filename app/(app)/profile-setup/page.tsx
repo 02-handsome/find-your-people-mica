@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { ProfileSetupForm } from "@/components/ProfileSetupForm";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { HINT } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { isProfileComplete } from "@/lib/profile-options";
@@ -43,15 +44,24 @@ export default async function ProfileSetupPage() {
   const editing = isProfileComplete(profile);
 
   return (
-    <main className="mx-auto w-full max-w-sm px-6 py-10">
-      <h1 className="text-2xl font-semibold tracking-tight">
-        {editing ? "Edit your profile" : "Set up your profile"}
-      </h1>
-      <p className={`mt-2 ${HINT}`}>
-        {editing
-          ? "Changes apply to anyone you match with from now on."
-          : "This is what other people see when you match. Takes about a minute."}
-      </p>
+    <main className="mx-auto w-full max-w-md px-5 py-10">
+      {/* This screen sits outside the (complete) shell — you pass through it
+          once, and navigating away from it would only be bounced back by the
+          completeness guard — so it carries its own header rather than the app
+          bar. The toggle keeps the same top-right corner it has everywhere. */}
+      <div className="mb-6 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-[22px] leading-7 font-semibold tracking-tight text-primary">
+            {editing ? "Edit Profile" : "Setup Profile"}
+          </h1>
+          <p className={`mt-1.5 ${HINT}`}>
+            {editing
+              ? "Changes apply to anyone you match with from now on."
+              : "Complete your profile to start connecting. Only share what you're comfortable with."}
+          </p>
+        </div>
+        <ThemeToggle />
+      </div>
 
       <ProfileSetupForm profile={profile} editing={editing} />
     </main>

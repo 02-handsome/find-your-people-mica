@@ -1,24 +1,17 @@
 "use client";
 
+import { Check, X } from "lucide-react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 
 import { respondToRequestAction } from "@/app/(app)/(complete)/requests/actions";
 import { Avatar } from "@/components/Avatar";
 import { FormError } from "@/components/FormError";
-import { Badge } from "@/components/ui/badge";
+import { OverlapLine } from "@/components/OverlapLine";
+import { BUTTON_NEUTRAL, BUTTON_PRIMARY, CHIP, HINT } from "@/components/ui";
 import { Card, CardContent } from "@/components/ui/card";
-import { BUTTON_NEUTRAL, BUTTON_PRIMARY, HINT } from "@/components/ui";
-import type { ViewerWindow } from "@/components/MatchCard";
-import {
-  ACTIVITY_LABELS,
-  EXPERIENCE_LABELS,
-  describeSharedDays,
-  formatTimeRange,
-  overlapWindow,
-  sharedDays,
-  toHHMM,
-} from "@/lib/intents";
+import type { ViewerWindow } from "@/lib/overlap";
+import { ACTIVITY_LABELS, EXPERIENCE_LABELS, formatTimeRange } from "@/lib/intents";
 import type { IncomingRequest } from "@/lib/requests";
 
 /**
@@ -34,11 +27,13 @@ function DecisionButton({
   label,
   pendingLabel,
   className,
+  children,
 }: {
   value: "accept" | "decline";
   label: string;
   pendingLabel: string;
   className: string;
+  children: React.ReactNode;
 }) {
   const { pending, data } = useFormStatus();
   const isThisOne = data?.get("decision") === value;
@@ -51,6 +46,7 @@ function DecisionButton({
       disabled={pending}
       className={className}
     >
+      {children}
       {pending && isThisOne ? pendingLabel : label}
     </button>
   );
@@ -84,27 +80,17 @@ export function IncomingRequestCard({
     error: null,
   });
 
-  const shared = viewer ? sharedDays(viewer.days, request.days) : [];
-  const overlap = viewer
-    ? overlapWindow(
-        viewer.time_start,
-        viewer.time_end,
-        request.time_start,
-        request.time_end
-      )
-    : null;
-
   return (
     <li>
       <Card>
         <CardContent>
-          <div className="flex items-start gap-3">
-            <Avatar src={request.avatar_url} name={request.name} size={44} />
+          <div className="flex items-center gap-4">
+            <Avatar src={request.avatar_url} name={request.name} size={56} />
             <div className="min-w-0 flex-1">
-              <h3 className="truncate font-semibold tracking-tight">
+              <h3 className="truncate text-lg leading-tight font-semibold tracking-tight">
                 {request.name}
               </h3>
-              <p className={HINT}>
+              <p className={`mt-1 ${HINT}`}>
                 {request.year} · {EXPERIENCE_LABELS[request.experience_level]}
               </p>
             </div>
@@ -112,49 +98,26 @@ export function IncomingRequestCard({
 
           {/* The same reason line the match card shows, for the same purpose:
               it says the two of you arrived here by posting the same thing. */}
-          {shared.length > 0 ? (
-            <div className="mt-3.5 flex items-start gap-2 rounded-lg bg-muted px-3 py-2.5">
-              <svg
-                aria-hidden
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                className="mt-0.5 shrink-0 text-muted-foreground"
-              >
-                <circle cx="9" cy="12" r="6" />
-                <circle cx="15" cy="12" r="6" />
-              </svg>
-              <p className="text-sm">
-                You both train{" "}
-                <span className="font-semibold">{describeSharedDays(shared)}</span>
-                {overlap ? (
-                  <>
-                    , and you&rsquo;re both free{" "}
-                    <span className="font-semibold">
-                      {toHHMM(overlap.start)} – {toHHMM(overlap.end)}
-                    </span>
-                  </>
-                ) : null}
-                .
-              </p>
-            </div>
-          ) : null}
+          <OverlapLine
+            className="mt-4"
+            viewer={viewer}
+            days={request.days}
+            timeStart={request.time_start}
+            timeEnd={request.time_end}
+          />
 
           {request.tags && request.tags.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-1.5">
+            <div className="mt-3 flex flex-wrap gap-2">
               {request.tags.map((tag) => (
-                <Badge key={tag} variant="outline">
+                <span key={tag} className={CHIP}>
                   {tag}
-                </Badge>
+                </span>
               ))}
             </div>
           ) : null}
 
           {/* F4.3: "intent details" — what they are actually proposing. */}
-          <p className="mt-3 text-sm">
+          <p className={`mt-3 ${HINT}`}>
             {ACTIVITY_LABELS[request.activity]} · {request.days.join(", ")} ·{" "}
             {formatTimeRange(request.time_start, request.time_end)}
           </p>
@@ -163,30 +126,31 @@ export function IncomingRequestCard({
             <input type="hidden" name="request_id" value={request.request_id} />
             <FormError message={state.error} />
 
-            {/* Both are full-height targets now. Decline used to be a 14px
-                text link beside a 48px button, which made the two choices look
-                unequal when F4.4 offers them as a pair. It stays NEUTRAL
-                rather than red: declining is silent and ordinary (F4.6), and
-                red beside the green primary would read as a traffic light. */}
-            <div className="flex items-center gap-2.5">
-              <div className="flex-1">
-                <DecisionButton
-                  value="accept"
-                  label="Accept"
-                  pendingLabel="Accepting…"
-                  className={BUTTON_PRIMARY}
-                />
-              </div>
+            {/* Equal weight, side by side, the way Stitch pairs them. Decline
+                stays NEUTRAL rather than red: declining is silent and ordinary
+                (F4.6), and red beside the red primary would read as a traffic
+                light. */}
+            <div className="flex items-center gap-3">
+              <DecisionButton
+                value="accept"
+                label="Accept"
+                pendingLabel="Accepting…"
+                className={`${BUTTON_PRIMARY} flex-1`}
+              >
+                <Check aria-hidden className="size-5" strokeWidth={2.25} />
+              </DecisionButton>
               <DecisionButton
                 value="decline"
                 label="Decline"
                 pendingLabel="Declining…"
-                className={`${BUTTON_NEUTRAL} disabled:opacity-50`}
-              />
+                className={`${BUTTON_NEUTRAL} flex-1`}
+              >
+                <X aria-hidden className="size-5" strokeWidth={2.25} />
+              </DecisionButton>
             </div>
           </form>
 
-          <p className={`mt-2.5 ${HINT}`}>
+          <p className={`mt-3 ${HINT}`}>
             {/* Says exactly what Accept does, at the moment of the decision.
                 This is the one irreversible action in the product: F4.5
                 reveals both handles and AD-16 makes accepted terminal. */}

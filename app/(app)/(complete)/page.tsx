@@ -2,11 +2,10 @@ import type { Metadata } from "next";
 import { Dumbbell, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 
-import { Avatar } from "@/components/Avatar";
 import { IncomingRequestCard } from "@/components/IncomingRequestCard";
 import { IntentCard } from "@/components/IntentCard";
 import { LogOutButton } from "@/components/LogOutButton";
-import { BUTTON_PRIMARY_LINK, CARD, HINT } from "@/components/ui";
+import { BUTTON_PRIMARY_LINK, CARD, HINT, LINK_MUTED } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { getActiveIntent } from "@/lib/intents-server";
 import { getIncomingRequests } from "@/lib/requests-server";
@@ -14,15 +13,16 @@ import { getIncomingRequests } from "@/lib/requests-server";
 export const metadata: Metadata = { title: "Home · Find Your People" };
 
 /**
- * Screen 4 (Home) — Phase 6 version.
+ * Screen 4 (Home).
  *
  * PRD section 7 lists three things here: the active intent card with countdown
- * and edit/withdraw, incoming requests, and a link to matches. All three are
- * present, plus a link to Connections (screen 6).
+ * and edit/withdraw, incoming requests, and a link to matches. The first two
+ * are sections below; the third is now the bottom nav, which is a better home
+ * for it than a button that only appeared once you already had an intent.
  *
- * Incoming requests come FIRST, above the user's own intent. They are the only
- * thing on this screen where someone else is waiting on you, and the only one
- * with an irreversible action attached.
+ * Incoming requests come FIRST, as they do in the Stitch layout — they are the
+ * only thing on this screen where someone else is waiting on you, and the only
+ * one with an irreversible action attached.
  */
 export default async function HomePage() {
   const [profile, intent, incoming] = await Promise.all([
@@ -58,17 +58,7 @@ export default async function HomePage() {
     : null;
 
   return (
-    <main className="mx-auto w-full max-w-sm px-6 py-10">
-      <header className="flex items-center gap-3">
-        <Avatar src={profile.avatar_url} name={profile.name} />
-        <div className="min-w-0">
-          <h1 className="truncate text-xl font-semibold tracking-tight">
-            {profile.name}
-          </h1>
-          <p className={HINT}>{profile.year}</p>
-        </div>
-      </header>
-
+    <main className="flex flex-col gap-8 py-6">
       {/* F4.3 — incoming requests. Only rendered when there are any: an empty
           "no requests" panel on every visit would be noise, and this screen
           already has a designed empty state for the thing that matters when
@@ -77,28 +67,31 @@ export default async function HomePage() {
         /* An inline failure, not a thrown one: the rest of this screen — the
            user's intent, their contact handle — loaded fine and is still
            useful. Degrading one section beats replacing the whole page. */
-        <section className={`mt-8 ${CARD} text-center`}>
+        <section className={`${CARD} text-center`}>
           <TriangleAlert
             aria-hidden
             className="mx-auto size-7 text-muted-foreground"
             strokeWidth={1.5}
           />
-          <h2 className="mt-4 text-base font-medium">
+          <h2 className="mt-4 text-base font-semibold">
             Couldn&rsquo;t load your requests
           </h2>
-          <p className={`mt-1 ${HINT}`}>
-            If someone has asked to connect, it&rsquo;s still waiting — reload to
-            try again.
+          <p className={`mt-2 ${HINT}`}>
+            If someone has asked to connect, it&rsquo;s still waiting — reload
+            to try again.
           </p>
         </section>
       ) : incoming.requests.length > 0 ? (
-        <section className="mt-8">
-          <h2 className="text-sm font-medium">
-            {incoming.requests.length === 1
-              ? "1 person wants to connect"
-              : `${incoming.requests.length} people want to connect`}
-          </h2>
-          <ul className="mt-3 space-y-4">
+        <section>
+          <div className="mb-3 flex items-end justify-between gap-3">
+            <h2 className="text-[22px] leading-7 font-semibold tracking-tight">
+              Requests
+            </h2>
+            <span className="label-caps rounded-full bg-primary px-2.5 py-1 text-primary-foreground">
+              {incoming.requests.length} New
+            </span>
+          </div>
+          <ul className="space-y-4">
             {incoming.requests.map((request) => (
               <IncomingRequestCard
                 key={request.request_id}
@@ -110,42 +103,37 @@ export default async function HomePage() {
         </section>
       ) : null}
 
-      <div className="mt-8">
+      <section>
+        <h2 className="mb-3 text-[22px] leading-7 font-semibold tracking-tight">
+          Your Active Intent
+        </h2>
         {intent ? (
-          <>
-            <IntentCard intent={intent} />
-            {/* Screen 4 lists a link to matches. Only shown with a live intent,
-                because matching is relative to one — there is nothing to
-                compare against otherwise. */}
-            <Link href="/matches" className={`mt-4 ${BUTTON_PRIMARY_LINK}`}>
-              See your matches
-            </Link>
-          </>
+          <IntentCard intent={intent} />
         ) : (
           /* CLAUDE.md: never a blank screen. This is the state a brand-new user
              lands on, so it explains the product in one line rather than just
              reporting an absence. */
-          <section className={`${CARD} px-6 py-10 text-center`}>
+          <div className={`${CARD} px-6 py-10 text-center`}>
             <Dumbbell
               aria-hidden
               className="mx-auto size-8 text-muted-foreground"
               strokeWidth={1.5}
             />
-            <h2 className="mt-5 text-base font-medium">No active intent</h2>
+            <h3 className="mt-5 text-base font-semibold">No active intent</h3>
             <p className={`mt-2 ${HINT}`}>
               Post what you want a partner for, and you&rsquo;ll see a few
               people who posted the same thing.
             </p>
-            <Link href="/intent/new" className={`mt-4 ${BUTTON_PRIMARY_LINK}`}>
+            <Link href="/intent/new" className={`mt-5 ${BUTTON_PRIMARY_LINK}`}>
               Post an intent
             </Link>
-          </section>
+          </div>
         )}
-      </div>
+      </section>
 
-      <section className={`mt-6 ${CARD}`}>
-        <h2 className="text-sm font-medium">Your contact handle</h2>
-        <p className="mt-1 font-mono text-sm">{profile.contact_handle}</p>
+      <section className={CARD}>
+        <h2 className="label-caps text-label">Your contact handle</h2>
+        <p className="mt-2 font-mono text-base">{profile.contact_handle}</p>
         <p className={`mt-2 ${HINT}`}>
           {/* Stating the core product promise on the one screen where the user
               can see their own handle. PRD N4. */}
@@ -153,20 +141,12 @@ export default async function HomePage() {
         </p>
       </section>
 
-      <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2">
-        <Link
-          href="/connections"
-          className="inline-block py-3 text-sm font-medium underline text-muted-foreground"
-        >
-          Connections
-        </Link>
-        <Link
-          href="/profile-setup"
-          className="inline-block py-3 text-sm font-medium underline text-muted-foreground"
-        >
+      {/* Connections moved into the bottom nav; these two have nowhere else to
+          live, so they stay as a quiet row. */}
+      <div className="flex flex-wrap items-center gap-x-5">
+        <Link href="/profile-setup" className={LINK_MUTED}>
           Edit profile
         </Link>
-
         <LogOutButton />
       </div>
     </main>

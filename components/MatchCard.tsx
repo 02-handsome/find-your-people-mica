@@ -1,40 +1,41 @@
+import { Gauge } from "lucide-react";
+
 import { Avatar } from "@/components/Avatar";
 import { ConnectButton } from "@/components/ConnectButton";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { HINT } from "@/components/ui";
+import { DayCircles } from "@/components/DayCircles";
+import { CARD, CHIP, HINT } from "@/components/ui";
 import {
-  DAYS,
   EXPERIENCE_LABELS,
-  describeSharedDays,
   formatTimeRange,
   overlapWindow,
   sharedDays,
   toHHMM,
-  type Day,
 } from "@/lib/intents";
 import { RELAXED_LABEL, type MatchCandidate } from "@/lib/matches";
-
-/** What the viewer posted. Enough to work out the overlap, and nothing more. */
-export type ViewerWindow = {
-  days: Day[];
-  time_start: string;
-  time_end: string;
-};
+import type { ViewerWindow } from "@/lib/overlap";
 
 /**
- * Screen 5 — one candidate: avatar, name, year, tags, days and time.
+ * Screen 5 — one candidate, following the Stitch match card.
  *
  * `score` is still deliberately not rendered. The PRD does not ask for it, and
  * showing a number invites the reader to argue with the weighting rather than
  * with the person.
  *
- * What IS rendered now is the *reason* — the shared days and the shared hours.
- * Those are the two largest terms in F3's formula, so the line explains the
- * ordering in the ranking's own currency without exposing the arithmetic. It
- * costs no extra query: get_matches() already returns shared_days and
- * time_overlap_minutes, and the matches page already loads the viewer's intent
- * to build its header. See docs/notes.md AD-28.
+ * What IS rendered is the REASON, and Stitch's layout turns out to be a better
+ * container for it than the sentence this card used to carry. Their card has a
+ * labelled row — "Shared Study Days" on the left, the hours on the right — over
+ * a row of day circles. That is exactly `shared_days` and
+ * `time_overlap_minutes`, the two largest terms in F3's formula, which
+ * get_matches() has returned since Phase 5 and which nothing rendered. The
+ * label keeps the mutual phrasing the sentence had, because the point of
+ * saying it at all is that neither of you asked first.
+ *
+ * Costs no query: the matches page already loads the viewer's own intent to
+ * build its header, and the rest is arithmetic.
+ *
+ * The incoming-request card on home keeps the sentence form. That is not an
+ * oversight — there you are reading one card and being told why someone found
+ * you; here you are comparing three and want the shape of each at a glance.
  */
 export function MatchCard({
   candidate,
@@ -56,108 +57,89 @@ export function MatchCard({
 
   return (
     <li>
-      <Card
-        className={
-          // Ranking made visible without printing a score. A left rule rather
-          // than a lighter surface: the card is already the lightest thing on
-          // a cream page, so there is no lighter to go.
-          highlight ? "border-l-4 border-l-primary" : undefined
-        }
-      >
-        <CardContent>
-          <div className="flex items-start gap-3">
-            <Avatar src={candidate.avatar_url} name={candidate.name} size={44} />
-            <div className="min-w-0 flex-1">
-              <h3 className="truncate font-semibold tracking-tight">
-                {candidate.name}
-              </h3>
-              <p className={HINT}>
-                {candidate.year} ·{" "}
-                {EXPERIENCE_LABELS[candidate.experience_level]} ·{" "}
-                {formatTimeRange(candidate.time_start, candidate.time_end)}
-              </p>
-            </div>
+      <article className={CARD}>
+        <div className="flex items-start gap-4">
+          {/* Stitch rings the top card's avatar in the accent. Ranking made
+              visible without printing a position. */}
+          <div
+            className={
+              "shrink-0 rounded-full " +
+              (highlight
+                ? "ring-2 ring-primary ring-offset-2 ring-offset-card"
+                : "")
+            }
+          >
+            <Avatar
+              src={candidate.avatar_url}
+              name={candidate.name}
+              size={64}
+            />
           </div>
 
-          {/* The reason. Two overlapping circles rather than a clock or a
-              calendar, because what it reports is the intersection itself. */}
-          {shared.length > 0 ? (
-            <div className="mt-3.5 flex items-start gap-2 rounded-lg bg-muted px-3 py-2.5">
-              <svg
-                aria-hidden
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                className="mt-0.5 shrink-0 text-muted-foreground"
-              >
-                <circle cx="9" cy="12" r="6" />
-                <circle cx="15" cy="12" r="6" />
-              </svg>
-              <p className="text-sm">
-                You both train{" "}
-                <span className="font-semibold">{describeSharedDays(shared)}</span>
-                {overlap ? (
-                  <>
-                    , and you&rsquo;re both free{" "}
-                    <span className="font-semibold">
-                      {toHHMM(overlap.start)} – {toHHMM(overlap.end)}
-                    </span>
-                  </>
-                ) : null}
-                .
-              </p>
-            </div>
-          ) : null}
-
-          {/* All seven days. A filled chip now means a day you SHARE, not a day
-              they happen to train — the intersection is the useful fact, and
-              the line above names it in words, so the encoding needs no key. */}
-          <div className="mt-3 flex flex-wrap gap-1.5" aria-label="Days you share">
-            {DAYS.map((day) => {
-              const on = shared.includes(day);
-              return (
-                <span
-                  key={day}
-                  className={
-                    "rounded-full px-2 py-0.5 text-xs " +
-                    (on
-                      ? "bg-primary text-primary-foreground"
-                      : "border border-border text-muted-foreground")
-                  }
-                >
-                  {day}
-                </span>
-              );
-            })}
-          </div>
-
-          {candidate.tags && candidate.tags.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {candidate.tags.map((tag) => (
-                <Badge key={tag} variant="outline">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
-          ) : null}
-
-          {/* F3.4 — shares a day, but the hours do not overlap. Neutral rather
-              than the old amber: on a green palette a warm caution tint sitting
-              beside a green primary reads as a traffic light. The copy is the
-              PRD's, verbatim. */}
-          {candidate.relaxed ? (
-            <p className="mt-3 rounded-lg bg-secondary px-2.5 py-1.5 text-xs text-muted-foreground">
-              {RELAXED_LABEL}
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-[22px] leading-tight font-semibold tracking-tight">
+              {candidate.name}
+            </h3>
+            <p className={`mt-1 ${HINT}`}>
+              {candidate.year} · trains{" "}
+              {formatTimeRange(candidate.time_start, candidate.time_end)}
             </p>
-          ) : null}
+          </div>
 
-          {/* F4.1 — "From a match card, user sends a connection request." */}
-          <ConnectButton toUserId={candidate.user_id} />
-        </CardContent>
-      </Card>
+          {/* Their PRO / INT slot. Every level gets the SAME neutral treatment:
+              level ranks rather than filters (AD-19), and colouring one of the
+              three differently would imply a hierarchy the app does not apply. */}
+          <span className="flex shrink-0 items-center gap-1 rounded-md bg-secondary px-2 py-1 text-muted-foreground">
+            <Gauge aria-hidden className="size-3.5" strokeWidth={2} />
+            <span className="label-caps">
+              {EXPERIENCE_LABELS[candidate.experience_level]}
+            </span>
+          </span>
+        </div>
+
+        {candidate.tags && candidate.tags.length > 0 ? (
+          <div className="mt-3 flex flex-wrap gap-2">
+            {candidate.tags.map((tag) => (
+              <span key={tag} className={CHIP}>
+                {tag}
+              </span>
+            ))}
+          </div>
+        ) : null}
+
+        <hr className="my-4 border-border" />
+
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-sm text-label">You both train</span>
+          <span className="label-caps text-primary">
+            {overlap
+              ? `${toHHMM(overlap.start)} – ${toHHMM(overlap.end)}`
+              : "No shared hours"}
+          </span>
+        </div>
+
+        <div className="mt-3">
+          <DayCircles
+            selected={shared}
+            label="Days you both train"
+            onLabel="shared"
+            offLabel="not shared"
+          />
+        </div>
+
+        {/* F3.4 — shares a day, but the hours do not overlap. Neutral rather
+            than a warning tint: on a red palette a caution colour beside the
+            red primary reads as a traffic light. The copy is the PRD's,
+            verbatim. */}
+        {candidate.relaxed ? (
+          <p className="mt-4 rounded-lg bg-secondary px-3 py-2 text-xs text-muted-foreground">
+            {RELAXED_LABEL}
+          </p>
+        ) : null}
+
+        {/* F4.1 — "From a match card, user sends a connection request." */}
+        <ConnectButton toUserId={candidate.user_id} />
+      </article>
     </li>
   );
 }

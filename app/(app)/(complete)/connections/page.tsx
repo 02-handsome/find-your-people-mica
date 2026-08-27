@@ -13,10 +13,12 @@ export default async function ConnectionsPage() {
   const { connections, failed } = await getConnections();
 
   return (
-    <main className="mx-auto w-full max-w-sm px-6 py-10">
+    <main className="flex flex-col gap-6 py-6">
       <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Connections</h1>
-        <p className={`mt-2 ${HINT}`}>
+        <h1 className="text-[22px] leading-7 font-semibold tracking-tight">
+          Connections
+        </h1>
+        <p className={`mt-1.5 ${HINT}`}>
           People you both said yes to. Their contact is here because they have
           yours.
         </p>
@@ -27,7 +29,7 @@ export default async function ConnectionsPage() {
            connections when the query broke is a claim about their life made on
            no information — and here it is the worst possible claim, because the
            screen exists to hold contact details they were promised. */
-        <section className={`mt-8 ${CARD} text-center`}>
+        <section className={`${CARD} text-center`}>
           <TriangleAlert
             aria-hidden
             className="mx-auto size-7 text-muted-foreground"
@@ -44,7 +46,7 @@ export default async function ConnectionsPage() {
       ) : connections.length === 0 ? (
         /* CLAUDE.md: never a blank screen. Explains the mechanism rather than
            reporting an absence — "none yet" alone reads like something broke. */
-        <section className={`mt-8 ${CARD} px-6 py-10 text-center`}>
+        <section className={`${CARD} px-6 py-10 text-center`}>
           <Handshake
             aria-hidden
             className="mx-auto size-8 text-muted-foreground"
@@ -63,21 +65,13 @@ export default async function ConnectionsPage() {
           </Link>
         </section>
       ) : (
-        <ul className="mt-8 space-y-4">
+        <ul className="space-y-4">
           {connections.map((connection) => (
             <ConnectionCard key={connection.request_id} connection={connection} />
           ))}
         </ul>
       )}
 
-      <div className="mt-8">
-        <Link
-          href="/"
-          className="inline-block py-3 text-sm font-medium underline text-muted-foreground"
-        >
-          Back to home
-        </Link>
-      </div>
     </main>
   );
 }

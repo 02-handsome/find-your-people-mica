@@ -1,5 +1,6 @@
 "use client";
 
+import { Hand } from "lucide-react";
 import { useActionState } from "react";
 
 import { sendRequestAction } from "@/app/(app)/(complete)/requests/actions";
@@ -29,17 +30,20 @@ export function ConnectButton({ toUserId }: { toUserId: string }) {
 
   if (state.sent) {
     return (
-      <p className="mt-4 rounded-lg bg-muted px-3 py-2 text-sm font-medium">
+      <p className="mt-5 rounded-lg bg-secondary px-4 py-3 text-center text-base font-semibold text-muted-foreground">
         {REQUEST_SENT_LABEL}
       </p>
     );
   }
 
   return (
-    <form action={formAction} className="mt-4 space-y-2">
+    <form action={formAction} className="mt-5 space-y-2">
       <input type="hidden" name="to_user_id" value={toUserId} />
       <FormError message={state.error} />
-      <SubmitButton pendingLabel="Sending…">Connect</SubmitButton>
+      <SubmitButton pendingLabel="Sending…">
+        <Hand aria-hidden className="size-5" strokeWidth={2} />
+        Connect
+      </SubmitButton>
       <p className={HINT}>
         {/* Set expectations before the tap, not after. Nothing is shared yet,
             and F4.6 means a decline will never be reported back. */}
