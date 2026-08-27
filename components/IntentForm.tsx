@@ -84,16 +84,14 @@ export function IntentForm({
         )}
       </div>
 
-      <div>
-        <span className={LABEL}>Which days?</span>
-        <ChipGroup
-          name="days"
-          options={DAYS}
-          initial={days}
-          counter={(n) => (n === 0 ? "Pick at least one" : `${n} selected`)}
-          ariaLabel="Days"
-        />
-      </div>
+      <ChipGroup
+        name="days"
+        heading="Which days?"
+        options={DAYS}
+        initial={days}
+        counter={(n) => (n === 0 ? "Pick at least one" : `${n} selected`)}
+        ariaLabel="Days"
+      />
 
       <div>
         <span className={LABEL}>Time window</span>
@@ -120,34 +118,36 @@ export function IntentForm({
             className={INPUT}
           />
         </div>
-        <p className={`mt-1.5 ${HINT}`}>
+        <p className={`mt-2 ${HINT}`}>
           The window you could actually make, not the exact hour.
         </p>
       </div>
 
-      <div>
-        <span className={LABEL}>How would you describe yourself?</span>
-        {/* Same class of gap as the tag picker (AD-9): experience level is a
-            SCORING term, not a filter. F3 gives it `match ? 2 : 0`, so a
-            "Serious" runner is still matched with beginners — just two points
-            lower, which one extra shared day already outweighs. Without this
-            line, choosing "Serious" reads as "don't pair me with beginners",
-            which is a request the app never agreed to. */}
-        <p className={`mb-3 ${HINT}`}>
-          You&rsquo;ll still match with every level — this just nudges similar
-          ones higher.
-        </p>
-        <ChipGroup
-          name="experience_level"
-          options={EXPERIENCE_LEVELS.map((l) => ({
-            value: l,
-            label: EXPERIENCE_LABELS[l],
-          }))}
-          initial={level ? [level] : []}
-          single
-          ariaLabel="Experience level"
-        />
-      </div>
+      <hr className="border-border" />
+
+      {/* Same class of gap as the tag picker (AD-9): experience level is a
+          SCORING term, not a filter. F3 gives it `match ? 2 : 0`, so a
+          "Serious" runner is still matched with beginners — just two points
+          lower, which one extra shared day already outweighs. Without this
+          line, choosing "Serious" reads as "don't pair me with beginners",
+          which is a request the app never agreed to. */}
+      <ChipGroup
+        name="experience_level"
+        heading="How would you describe yourself?"
+        description={
+          <>
+            You&rsquo;ll still match with every level — this just nudges similar
+            ones higher.
+          </>
+        }
+        options={EXPERIENCE_LEVELS.map((l) => ({
+          value: l,
+          label: EXPERIENCE_LABELS[l],
+        }))}
+        initial={level ? [level] : []}
+        single
+        ariaLabel="Experience level"
+      />
 
       <SubmitButton pendingLabel="Saving…">
         {mode === "create" ? "Post intent" : "Save changes"}
