@@ -2,11 +2,11 @@ import { Clock } from "lucide-react";
 import Link from "next/link";
 
 import { ActivityIcon } from "@/components/ActivityIcon";
+import { DayCircles } from "@/components/DayCircles";
 import { WithdrawIntent } from "@/components/WithdrawIntent";
 import { BUTTON_NEUTRAL, BUTTON_PRIMARY_LINK, CARD, CHIP } from "@/components/ui";
 import {
   ACTIVITY_LABELS,
-  DAYS,
   EXPERIENCE_LABELS,
   formatExpiry,
   formatTimeRange,
@@ -54,23 +54,16 @@ export function IntentCard({ intent }: { intent: Intent }) {
         </span>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-1.5" aria-label="Days">
-        {DAYS.map((day) => {
-          const on = intent.days.includes(day);
-          return (
-            <span
-              key={day}
-              className={
-                "rounded-full px-2.5 py-1 text-xs font-medium " +
-                (on
-                  ? "bg-primary text-primary-foreground"
-                  : "border border-border text-muted-foreground")
-              }
-            >
-              {day}
-            </span>
-          );
-        })}
+      {/* Same circles as the match card, so days read one way across the app.
+          Here a filled circle is a day you posted, not a day you share — the
+          label is what carries that difference. */}
+      <div className="mt-4">
+        <DayCircles
+          selected={intent.days}
+          label="Days you posted"
+          onLabel="posted"
+          offLabel="not posted"
+        />
       </div>
 
       <div className="mt-3">
