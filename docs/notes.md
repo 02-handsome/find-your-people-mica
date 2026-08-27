@@ -35,6 +35,7 @@ chose, why, and what I gave up.
 - [AD-27 — The avatar fallback is the default state, not an error handler.](#ad-27--the-avatar-fallback-is-the-default-state-not-an-error-handler)
 - [AD-28 — Visual pass: a borrowed palette, a borrowed grid, and one moment allowed to be loud.](#ad-28--visual-pass-a-borrowed-palette-a-borrowed-grid-and-one-moment-allowed-to-be-loud)
 - [AD-29 — The theme toggle: a cookie, three states, and one thing the palette audit had missed.](#ad-29--the-theme-toggle-a-cookie-three-states-and-one-thing-the-palette-audit-had-missed)
+- [AD-30 — The Stitch rebuild: five screens, three refusals, and two workarounds that outlived their problem.](#ad-30--the-stitch-rebuild-five-screens-three-refusals-and-two-workarounds-that-outlived-their-problem)
 - [OQ-1 — RESOLVED in Phase 6. See AD-23.](#oq-1--resolved-in-phase-6-see-ad-23)
 - [OQ-1 (original) — What happens to pending requests when the intent behind them is withdrawn?](#oq-1-original--what-happens-to-pending-requests-when-the-intent-behind-them-is-withdrawn)
 
@@ -1210,6 +1211,13 @@ routes, no schema change, no new SQL, no Server Component boundary moved. What
 changed is which colours things are, which component draws them, and how much
 room the important things get.
 
+> **Superseded by AD-30 on the `stitch-redesign` branch.** The matcha palette
+> described below was replaced wholesale by the Google Stitch token set. The
+> reasoning here is kept because AD-30 turns on it: the two workarounds this
+> entry introduces — the inverted reveal and the faded-fill disabled button —
+> both existed only because matcha made the accent and the body text the same
+> hex, and neither survived a palette where they differ.
+
 ### Where the palette came from
 
 **Astryx "matcha"** — Meta's open-source design system (`facebook/astryx`, MIT).
@@ -1510,6 +1518,12 @@ Dropped to full `text-muted-foreground`. ChipGroup's genuinely disabled chips
 keep the fade — disabled controls are exempt, and there the fade means
 something.
 
+> **That last sentence is wrong, and AD-30 corrects it.** Exemption from the
+> contrast requirement is not the same as being usable: at the tag limit the
+> fade left eleven of fourteen options unreadable at 2.55:1, exactly when a
+> reader needs to compare them to decide what to swap. The disabled chips are
+> now full muted too.
+
 After the fix: **180 rendered text elements across both themes, zero failures,
 minimum 4.53:1 light and 5.43:1 dark.**
 
@@ -1573,6 +1587,184 @@ and measured, but the page-level composition was not.
 **One build change:** `/_not-found` moves from static to dynamic, because the
 root layout now reads a cookie. Every other route was already dynamic. Client
 bundle is unchanged at 121 kB.
+
+---
+
+## AD-30 — The Stitch rebuild: five screens, three refusals, and two workarounds that outlived their problem.
+
+A full visual rebuild against a supplied Google Stitch export, on the
+`stitch-redesign` branch, one screen per commit with a review gate between
+each. Presentation only throughout: no SQL, no RLS, no schema, no Server
+Component boundary moved, and `verify:reveal` (26), `verify:constraints` (31)
+and `verify:matches` (29) green at every step.
+
+The export is committed under `docs/stitch-export/` — five `code.html` files, a
+screenshot each, and a `DESIGN.md` carrying a full Material 3 token set. Their
+HTML was read for STRUCTURE only; none of it is in the app.
+
+### The palette is a genuine upgrade, not just a change
+
+Their "Vibrant Connection" set replaces Astryx matcha. Light is used
+**verbatim** — not one value adjusted, because every text/background pairing
+clears 4.5:1 as shipped. Dark is **derived** from the `inverse-*` and `*-fixed`
+tokens in the same set rather than invented: the M3 inversion is literal, so
+light-mode `on-surface` becomes the dark page, `inverse-surface` the dark card,
+`inverse-primary` the dark accent. Their own `connections_red` markup confirms
+the intent, carrying `dark:bg-on-surface` on the body.
+
+Two things matcha needed and this did not:
+
+1. Matcha's `--color-text-secondary` measured 3.83:1 and had to be darkened by
+   hand (AD-28). Nothing here needed correcting.
+2. Matcha made `--color-accent` and `--color-text-primary` the **same hex**.
+   That single defect produced two separate workarounds, and both are now
+   retired.
+
+**The retired inversion.** AD-28 inverted the contact reveal — solid fill,
+number reversed out — because a number "in the accent colour" would have been
+the same colour as every other word on the screen. Against a red that nothing
+else in the palette resembles, the number can simply BE the accent. The
+workaround outlived the problem it solved.
+
+The *emphasis* stayed. Stitch renders the handle as 14px body text beside a
+prominent button, which is precisely the treatment AD-28 argued against: F4.5
+is the only thing this product ultimately delivers, so it is 24px, in primary,
+with the 300ms fade-and-scale — still a CSS keyframe rather than a hook, so
+`ConnectionCard` remains a Server Component.
+
+### Three refusals
+
+A mock can assert anything. A UI that claims what the schema cannot support is
+lying to the user, and each of these would have.
+
+| Stitch shows | Shipped instead | Why |
+| --- | --- | --- |
+| A chat bubble for Connections in the nav | A handshake | In-app chat is the FIRST item on the PRD's non-goals. A speech bubble in navigation advertises a feature that does not exist |
+| A "Message" button on each connection | "Call" | `contact_handle` is validated as an Indian mobile. PRD Q4 expects WhatsApp, and a `wa.me` link was trivial — but nothing in the schema says this number is on WhatsApp |
+| "3 Nearby" | The match count | There is no location data anywhere in this app |
+
+Also skipped, for the same reason or a plainer one: photo upload (a PRD
+non-goal, and `avatar_url` is generated by a trigger), free-text "Program &
+Year" (validated against `YEARS`, so a text box invites input the save
+rejects), the free-text intent description (no column, and adding one is a
+schema change), "Forgot?" (no reset flow), Terms and Privacy (no such pages —
+dead links are worse than none), and the notification dots (no read/unread
+model).
+
+The contact placeholder went the same way: theirs reads "WhatsApp / Phone
+Number", ours says "10-digit mobile number", which is what
+`isValidContactHandle` actually accepts.
+
+### What the design gave back
+
+Not a one-way trade. Three things are better because of it:
+
+- **The reason line found a better container.** It was a sentence; Stitch's
+  match card has a labelled row over day circles, which is the same two facts —
+  `shared_days` and `time_overlap_minutes` — in a form you can compare across
+  three cards at a glance. The left label reads "You both train", so the mutual
+  phrasing survives; that phrasing is the point, because neither of you asked
+  first. The request card on home keeps the sentence, where you are reading one
+  card rather than comparing several.
+- **The bottom nav retired a button that should never have existed** — home's
+  "See your matches" only appeared once you already had an intent.
+- **Days are drawn one way now.** `DayCircles` is shared by the match card and
+  the intent card; filled means "shared" on one and "posted" on the other, and
+  the label carries the difference. Single letters are ambiguous twice over (T
+  is Tuesday or Thursday, S is Saturday or Sunday), so each circle carries the
+  full day name and its state as sr-only text with the letter `aria-hidden`.
+
+Extracted along the way, all because a second or third copy was about to
+appear: `OverlapLine`, `DayCircles`, `ActivityIcon`, `StickyActions`, and
+`ViewerWindow` into `lib/overlap.ts` — a type should not be imported from
+whichever card happened to declare it first.
+
+### AD-29 revised: exempt from conformance is not the same as usable
+
+AD-29 left the disabled tag chips faded at `text-muted-foreground/60` on the
+grounds that disabled controls carry no contrast requirement. That is true, and
+it was the wrong test.
+
+The fade measures **2.55:1** in light. Once three tags are chosen, ELEVEN of
+fourteen become unreadable — at precisely the moment you need to read them to
+decide what to swap. The rule the fade existed to communicate is already stated
+by the counter beside the heading.
+
+They are now full muted with `cursor-not-allowed`. The chips do not have to
+disappear to prove they are refused.
+
+### Measurement lessons, which cost more time than the code
+
+Every audit in this rebuild ran against the rendered DOM rather than the
+palette, after AD-29's finding that a palette can be entirely AA-compliant
+while the interface built from it is not. That was the right instinct and it
+caught two real bugs. It also produced four false alarms, each of which looked
+exactly like a real one:
+
+1. **Transitions lie to `getComputedStyle`.** Reading colours immediately after
+   flipping `data-theme` returns the INTERPOLATED mid-transition value. An
+   inactive tab reported 1.51:1 and I nearly "fixed" a correct component. Every
+   audit since suppresses transitions before measuring.
+2. **`position: fixed` is not contained by `position: relative`.** A harness
+   rendering two 375px columns pinned both app bars to the viewport and
+   reported a 399px bar inside a 375px column. A `transform` on the wrapper
+   makes it a containing block.
+3. **Text-matching probes hit the wrong node, twice.** A search for the span
+   containing "Gym" found the request card's TAG rather than the intent card's
+   activity label, reporting it as muted when it is primary. A search for
+   "Expires" and later "Matched" found the OUTER pill before its inner span, so
+   the background read as transparent.
+
+The general form: **an instrument needs the same scepticism as the thing it
+measures.** Three of the four failures were in the apparatus, and all three
+were confidently wrong in a way that would have caused a real regression if
+acted on. The habit that saved it each time was looking at the element before
+changing the code.
+
+### The harness pattern, recorded because it is the only reason any of this was verified
+
+The authenticated screens could not be reached in a browser in this
+environment — no session was available. So each screen was verified by
+rendering the REAL components on a throwaway unguarded page, in both themes
+side by side, measuring computed colours and geometry, capturing the result
+with the compiled CSS and fonts inlined, and deleting the page before
+committing.
+
+This works only because of a choice made in AD-29: the palette blocks use bare
+attribute selectors (`[data-theme="dark"]`) rather than `:root`-anchored ones,
+so a theme is a SCOPE and one page can hold both. That was done for a different
+reason and paid for itself here.
+
+### What is NOT verified, stated plainly
+
+No screen in this rebuild has been seen as a live authenticated page, and no
+form has been submitted end to end since it began. Every component is measured
+in isolation and every route builds; the composed pages, the nav's active tab,
+and the full post → connect → accept → reveal loop are unverified. That is a
+real gap and it should be closed by hand before the work is demonstrated.
+
+### Smaller decisions worth not rediscovering
+
+- **The app bar keeps the wordmark on every screen.** Their `connections_red`
+  swaps it for the screen title while home and matches keep it; the bottom nav
+  already says where you are.
+- **The theme toggle sits where their settings gear does.** There is no
+  settings screen, and a control that does nothing is worse than no control.
+- **The sticky action bar is profile-setup only** — that screen is outside the
+  `(complete)` shell and has no bottom nav to collide with. The intent form is
+  inside it and keeps an inline submit rather than stacking two fixed bars.
+- **The secondary button is a filled neutral**, not the outlined red their
+  `DESIGN.md` prose describes. All five of their screens draw it filled, and an
+  outlined-red secondary would put red on both halves of the Accept/Decline
+  pair.
+- **Type is Geist plus the system monospace stack**, not their Hanken Grotesk /
+  Inter / JetBrains Mono. Three webfonts cost more against PRD N5 than exact
+  letterforms are worth on a field label.
+- **The logo is mounted, not placed.** The collage is a fully opaque rectangle —
+  measured, 0% transparent pixels — so on a dark page it would read as a white
+  box stuck on. Its plate colour is sampled from its own edge (`#f3e9d3`, from
+  corners running `#f3e9d3`–`#fceed3`), identical in both themes, so the paper
+  continues past the artwork rather than framing it.
 
 # Open questions
 
