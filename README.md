@@ -37,11 +37,11 @@ listed under Test accounts below.
 | --- | --- | --- |
 | 0:00 | Open the live URL. It lands on `/login` | F1.6 — every route except login and signup is private |
 | 0:08 | The campus notice and the test credentials on the login card | F1.2 and S5. The notice is rendered from the database allowlist, so it cannot contradict what signup actually accepts |
-| 0:15 | Log in as **test.two** → home | Avatar, the active intent with its countdown (F2.3), and your own contact handle with the line saying when it gets shared |
+| 0:15 | Log in as **test.two** → home | Avatar, the active intent with its expiry badge (F2.3), and your own contact handle with the line saying when it gets shared. On these two accounts the badge reads **EXPIRES 1 JAN 2028**, not a day count — published credentials expire far out (AD-13 revised) and `formatExpiry` switches to a date past 30 days, because "expires in 486 days" reads as a bug |
 | 0:28 | **Matches** in the bottom nav | Three ranked cards (F3.3) — name, year, tags, days, hours. The score is deliberately not rendered |
 | 0:40 | **Connect** on Test One's card | The card changes to "Request sent" and cannot be sent again (F4.2) |
 | 0:50 | Log out → log in as **test.one** | |
-| 1:00 | Home shows "1 person wants to connect" | F4.3 — the sender's name, avatar, tags and intent details, and no contact handle. Deciding whether to accept must not require already holding what accepting grants |
+| 1:00 | Home shows the **Requests** section with a "1 NEW" pill | F4.3 — the sender's name, avatar, tags and intent details, and no contact handle. Deciding whether to accept must not require already holding what accepting grants |
 | 1:10 | Read the line under the buttons, then **Accept** | *"Accepting shares your contact handle with them, and theirs with you."* The one irreversible action in the product, stated at the moment of the decision |
 | 1:20 | **Connections** in the bottom nav | Test Two's number, revealed (F4.5, F4.7) |
 | 1:28 | Back as test.two → **Connections** tab | The same reveal, the other way round. There is one accepted row, not one per direction, so neither party can be revealed without the other |
@@ -51,7 +51,7 @@ listed under Test accounts below.
 | Time | On screen | What it demonstrates |
 | --- | --- | --- |
 | 0:00 | Home → **Edit Intent** on the intent card | Update (F2.4) |
-| 0:08 | Change a day or the time window → **Save changes** | The countdown does not reset. F2.4 is explicit that `expires_at` survives an edit |
+| 0:08 | Change a day or the time window → **Save changes** | The expiry does not move. F2.4 is explicit that `expires_at` survives an edit |
 | 0:16 | **Withdraw** → **Yes, withdraw** | Delete (F2.5), behind an inline confirm rather than `window.confirm()` — which blocks the thread, cannot be tested, and looks foreign on mobile |
 | 0:22 | The designed "No active intent" empty state → **Post an intent** | Create (F2.1). Every operation is two taps from home |
 
@@ -101,7 +101,7 @@ each one cost, are in `docs/notes.md`.
 - Reading the code would never have found it. Attempting the attack did.
 - So the rule: for every requirement of the form *"user X must not be able to do Y"*, write the test that attempts Y.
 - And its corollary, found the same way: a write blocked by RLS returns **success with zero rows**, so the test has to count rows rather than check for an error. A security test that fails open in the reporting direction is worse than no test — it manufactures confidence.
-- Which is why `verify:constraints` makes 22 attempts at things the schema forbids (alongside 9 that must succeed, so it cannot pass by refusing everything), and `verify:reveal` attempts the leak by all three routes in every reachable request state.
+- Which is why `verify:constraints` makes 29 attempts at things the schema forbids (alongside 11 that must succeed, so it cannot pass by refusing everything), and `verify:reveal` attempts the leak by all three routes in every reachable request state.
 
 ---
 
@@ -173,6 +173,29 @@ Since the Stitch rebuild, Home, Matches and Connections are reached through a
 bottom tab bar rather than links at the foot of each page, and /profile-setup
 sits outside that shell because the completeness guard would bounce you
 straight back out of anywhere it led.
+
+### Responsive behaviour
+
+Mobile is the design and the default; the wider layouts are additive. Every
+rule below `md:` is untouched from the 375px original, so the measurements in
+`docs/notes.md` AD-28 / AD-29 / AD-30 — all taken at 375px — still describe
+what ships.
+
+| Width | Navigation | Column | Matches / Connections |
+| --- | --- | --- | --- |
+| < 768 | Fixed bottom tab bar | 448px | Stacked |
+| ≥ 768 | Tabs move into the app bar | 768px | 2 across |
+| ≥ 1024 | " | 1024px | 2 across |
+| ≥ 1280 | " | 1280px | 3 across |
+
+The column width is decided in exactly one place — `SHELL` in
+`components/ui.ts` — because six files previously hard-coded it and the app
+bar has to stay exactly as wide as the page under it. Single-document screens
+(home, the intent forms, profile setup) cap their content at `READABLE`
+instead of stretching: cards keep roughly the width they were drawn at and the
+extra viewport buys more columns, not wider cards. Login and signup stay a
+centred `max-w-md` card at every width, which is already the right desktop
+treatment for two fields. Full reasoning and what it cost: AD-31.
 
 Every one has a `loading.tsx` skeleton beside it that mirrors the real layout,
 and every list has a designed empty state — `CLAUDE.md` forbids a blank screen
@@ -413,11 +436,12 @@ its place. The verification prints it rather than hiding it.
 npm run verify:constraints
 ```
 
-31 checks as a real authenticated user. **22** are attempts at operations the
+40 checks as a real authenticated user. **29** are attempts at operations the
 schema is supposed to forbid — privilege escalation, cross-user reads and writes,
-illegal status transitions, self-requests, duplicate requests — each asserted
-blocked. The other **9** are operations that must succeed, including the AD-14
-lazy-expiry path, so the suite cannot pass by refusing everything. Creates two
+illegal status transitions, self-requests, duplicate requests, contact handles in
+the wrong format — each asserted blocked. The other **11** are operations that
+must succeed, including the AD-14 lazy-expiry path, so the suite cannot pass by
+refusing everything. Creates two
 throwaway probe accounts and deletes them afterwards, so seeded data is never
 touched. This exists because a column-level `GRANT` once silently did nothing and
 the escalation succeeded in production (`docs/notes.md` AD-10).
@@ -469,7 +493,7 @@ collected in one place so none of them has to be discovered.
 | `npm run lint` | ESLint |
 | `npm run seed` | Reset the 32 seeded identities and their intents (F5.5) |
 | `npm run verify:seed` | Measure the seeded pool against F5.1 / F5.2 / F5.3 and print the numbers |
-| `npm run verify:constraints` | 31 checks — 22 attempts at operations the schema forbids, each asserted blocked, and 9 that must succeed |
+| `npm run verify:constraints` | 40 checks — 29 attempts at operations the schema forbids, each asserted blocked, and 11 that must succeed |
 | `npm run verify:matches` | Reimplement F3's filter, score and sort independently, and compare against `get_matches()` |
 | `npm run verify:reveal` | Attempt the N4 leak by all three routes, in every reachable request state |
 

@@ -36,6 +36,7 @@ chose, why, and what I gave up.
 - [AD-28 — Visual pass: a borrowed palette, a borrowed grid, and one moment allowed to be loud.](#ad-28--visual-pass-a-borrowed-palette-a-borrowed-grid-and-one-moment-allowed-to-be-loud)
 - [AD-29 — The theme toggle: a cookie, three states, and one thing the palette audit had missed.](#ad-29--the-theme-toggle-a-cookie-three-states-and-one-thing-the-palette-audit-had-missed)
 - [AD-30 — The Stitch rebuild: five screens, three refusals, and two workarounds that outlived their problem.](#ad-30--the-stitch-rebuild-five-screens-three-refusals-and-two-workarounds-that-outlived-their-problem)
+- [AD-31 — Responsive: one column constant, two navigations, and the session gap finally closed.](#ad-31--responsive-one-column-constant-two-navigations-and-the-session-gap-finally-closed)
 - [OQ-1 — RESOLVED in Phase 6. See AD-23.](#oq-1--resolved-in-phase-6-see-ad-23)
 - [OQ-1 (original) — What happens to pending requests when the intent behind them is withdrawn?](#oq-1-original--what-happens-to-pending-requests-when-the-intent-behind-them-is-withdrawn)
 
@@ -1765,6 +1766,194 @@ real gap and it should be closed by hand before the work is demonstrated.
   box stuck on. Its plate colour is sampled from its own edge (`#f3e9d3`, from
   corners running `#f3e9d3`–`#fceed3`), identical in both themes, so the paper
   continues past the artwork rather than framing it.
+
+## AD-31 — Responsive: one column constant, two navigations, and the session gap finally closed.
+
+The app had exactly **one** responsive utility in it — `sm:h-[150px]` on the
+logo in `BrandMark`. Everything else was a fixed 448px column (`max-w-md`)
+centred at every viewport from 375px to 4K. Measured on the live pages:
+
+| Viewport | Content width | Side gutter | Viewport unused |
+| --- | --- | --- | --- |
+| 375 | 335px | 20px | 11% |
+| 768 | 408px | 180px | 47% |
+| 1280 | 408px | 436px | **68%** |
+
+Nothing broke — no overflow at any width, and a fixed phone column is a
+defensible mobile-first choice. But PRD **S4** grades desktop explicitly
+("Live URL loads on desktop and mobile"), and three tabs huddled in the middle
+of a 1280px bar read as a fault rather than a decision.
+
+Presentation only, as with AD-28 and AD-30: no SQL, no RLS, no schema, no
+Server Component boundary moved. `verify:reveal` (26), `verify:constraints`
+(40) and `verify:matches` (29) green afterwards.
+
+### Mobile is byte-identical, and that is the load-bearing constraint
+
+Every change sits behind `md:`, `lg:` or `xl:`. Below 768px the class sets
+resolve to exactly what shipped before, which is what lets AD-28's, AD-29's and
+AD-30's measurements — **all taken at 375px** — keep describing the product.
+Verified rather than asserted: `main` measures 335px at x=20 on home at 375px,
+before and after, and the bottom tab bar is still the only nav in the
+accessibility tree there.
+
+That also protects the demo, which is shot on a phone.
+
+### The width was written out six times
+
+`(complete)/layout`, `profile-setup`, `(auth)/layout`, `AppBar`, `BottomNav`
+and `StickyActions` each carried their own `mx-auto w-full max-w-md px-5`. The
+chrome has to stay exactly as wide as the content beneath it or the app bar and
+the page visibly come apart — so making six copies responsive independently is
+the "two places that can disagree" failure this project has already met three
+times (AD-5, AD-10, AD-20).
+
+So `SHELL` in `components/ui.ts` is now the only place the width is decided,
+with `READABLE` as an inner cap. That extraction came first, because it is what
+made every later change a one-line edit instead of six that must agree.
+
+**`(auth)` was deliberately left out.** A login card centred at `max-w-md` is
+already the correct desktop treatment; widening a two-field form to 1024px
+would make it worse. Not an oversight.
+
+### Two navigations from one definition
+
+A fixed bottom tab bar is a phone idiom. From `md:` the tabs move into the app
+bar and the bottom bar goes `display: none` — which removes it from the
+accessibility tree rather than merely hiding it, so there are never two "Main"
+landmarks. Confirmed at 375 (`display: block` / `none`) and 768 (`none` /
+`flex`).
+
+Both are rendered from one `TABS` array through one `NavTabs` component, so the
+active-tab rule — including the `href === "/"` special case that stops Home
+prefix-matching everything — exists once. A second copy of that rule is exactly
+what the width extraction above was done to avoid.
+
+The `pb-28` that reserved space for the fixed bar becomes `md:pb-12` at the
+same breakpoint, or every desktop page would carry 112px of dead space.
+
+### Cards keep their designed width; the viewport buys more columns
+
+The Stitch cards were drawn for roughly 335–408px. Stretching one to 1216px
+would spread seven day-circles across a row they were never sized for. So the
+lists grid instead, and the card stays near its native width:
+
+| Viewport | Match cards | Card width |
+| --- | --- | --- |
+| 375 | 1-up | 335px |
+| 768 | 2-up | 344px |
+| 1280 / 1440 | 3-up | 395px |
+
+**3-up waits for `xl:`, and that came from arithmetic rather than taste.** At
+`lg` (1024px shell) three columns give 309px per card — 269px inside the p-5
+padding, against seven 32px day circles plus gaps at 266px. It fits by 3px,
+which is not fitting. `xl` widens the shell to 1280 and the same three cards
+get 395px.
+
+This also fixed something by accident: at 375px the candidate names truncate to
+"Ishaan Ku…" and "Aarav Me…". At 395px they render in full. The mobile
+truncation is pre-existing behaviour of the `truncate` on that heading and was
+left alone — changing it would break the byte-identical rule above — but it is
+worth knowing the desktop layout is the one that reads properly.
+
+### What this cost
+
+The app bar spans the shell while single-document screens (home, both intent
+forms, profile setup) sit in a narrower `READABLE` column, so on those screens
+the bar's contents and the page content do not share a left edge — 32px versus
+304px at 1280. On the list screens they align exactly, because those use the
+full shell.
+
+Accepted: it is the ordinary "full-width chrome over a centred reading column"
+pattern, and both are centred on the same axis rather than lopsided. The
+alternative — one width for everything — means either a 1216px-wide stack of
+48px text inputs or match cards too cramped to hold their own day circles.
+Recorded because it is a real inconsistency and someone will notice it.
+
+### The skeletons had to move too
+
+`SkeletonScreen` hard-coded `py-6` and nothing else, which was correct only for
+screens inside the `(complete)` shell. `/profile-setup` sits outside it, so its
+loading state rendered **edge-to-edge** and then snapped into a centred column
+when the real page landed. Found by fetching the server HTML, not in the
+browser: `<main role="status" aria-busy="true" class="py-6">`.
+
+`SkeletonScreen` and `FormSkeleton` now take a `className`, the two list
+skeletons carry the same grid as their pages, and profile-setup's supplies its
+own column. A skeleton that does not match its page is a jump on every
+navigation, at every width AD-26 never had to think about.
+
+### The session, at last — and it was a throwaway
+
+AD-29 and AD-30 both close with the same admission: the authenticated screens
+could not be reached in a browser, no session was available, and the composed
+pages were therefore unverified.
+
+That is now closed, by a temporary Route Handler at `app/dev-session/route.ts`
+which signed in with the **published** fixture credentials from
+`lib/test-accounts.ts` through the app's own server client — so `@supabase/ssr`
+wrote the cookie in exactly the format it expects. The alternative was
+hand-rolling `base64-` + chunked JSON, which is guessing at an SDK's private
+encoding while the SDK is sitting right there.
+
+It 404'd outside `NODE_ENV=development` and was **deleted before committing**.
+It never went near Vercel; this repository is public and an auth bypass in a
+public production deployment is not a trade worth making for a demo.
+
+### Measurement lessons, continuing AD-30's list
+
+4. **A hidden browser pane reports `viewport: 0x0`,** and every geometry number
+   derived from it is garbage that looks like data. The first measurement run
+   produced a full table of zeros and plausible-looking gutters.
+5. **AD-26 was right that the pane cannot run Suspense's streaming swap, and
+   the reason is one level deeper than recorded.** React's `$RC` is present but
+   the boundary never completes. Injecting the hidden content manually makes
+   the DOM correct and *measurable* — `getBoundingClientRect` returns true
+   layout — but those nodes never reach the captured frame, so screenshots come
+   back with a rendered app bar over an empty body. Layout and paint disagreed,
+   and only one of them was lying.
+6. **The fix is to remove the streaming, not to fight it.** `fetch()` the route
+   and `document.write()` the complete response: the browser parses it whole,
+   there is no pending boundary, React's own scripts run, and the page paints.
+   That is how every screenshot in this entry was taken. Worth keeping — it
+   turns any authenticated route into a real, paintable, measurable page.
+
+### Verified
+
+- 375 / 768 / 1280 / 1440 on home, matches, connections and the intent form.
+  No horizontal overflow at any width on any screen.
+- Nav swaps at exactly one breakpoint; one "Main" landmark at all times.
+- 55 rendered text elements at 1280 in **both** themes, zero contrast failures
+  — transitions suppressed first, per AD-30's first measurement lesson. The
+  only genuinely new rendered element, the app-bar tab row, is in that set.
+- lint, `tsc --noEmit`, production build all clean. Client bundle unchanged at
+  121 kB; all nine routes still dynamic.
+
+**Not verified:** the mutating half of the loop. Connect → Accept → reveal was
+not walked, because doing it writes a real request onto the two published
+accounts and needs a re-seed afterwards, and because `test.two`'s Connections
+list currently holds a real accepted connection with a real contact handle that
+is not the seed's to delete (AD-25). The composed pages are verified; the
+transitions between them by mutation are not.
+
+### Two things found while walking, not in the plan
+
+**The edit screen's expiry sentence was broken on both published accounts.** It
+built its copy by stripping `"Expires in "` or `"Expired"` off `formatExpiry`'s
+output — two of that function's five returns. Past 30 days it emits
+`"Expires 1 Jan 2028"`, neither replacement matched, and the line rendered
+*"Editing doesn't extend it — still Expires 1 Jan 2028."* Both test accounts
+sit in that branch (AD-13 revised), so it was the only version a grader could
+ever see, and it is the frame the README's CRUD clip talks over. Fixed by
+lower-casing the leading verb instead — every branch starts `"Expire"`.
+
+**`verify:constraints` is 40 checks, not 31** — 29 blocked, 11 that must
+succeed. Migration `0006` added them and updated no documentation. The README
+said 31 in four places; all four are corrected. **AD-29 and AD-30 still say 31
+on purpose:** this file is a running record, and 31 was true when they were
+written. Rewriting them would falsify the log rather than update it.
+
+---
 
 # Open questions
 
