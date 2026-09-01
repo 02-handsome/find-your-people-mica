@@ -297,6 +297,7 @@ idempotent, so re-running one is always safe:
 | `0003_create_intent.sql` | `create_intent()` — atomic lazy-expiry + insert (AD-14) |
 | `0004_get_matches.sql` | `get_matches()` — the F3 query; its signature is the N4 guarantee |
 | `0005_requests_flow.sql` | send / incoming / connections / withdraw; the only function returning `contact_handle` |
+| `0006_contact_handle_check.sql` | `users_contact_handle_valid` — the phone format, enforced where the form cannot be bypassed |
 
 Two Supabase clients rather than one because the browser stores the session in
 cookies that the server also has to read. That shared-cookie handling is the
