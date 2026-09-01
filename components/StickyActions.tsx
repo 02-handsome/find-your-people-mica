@@ -11,11 +11,15 @@
  * Renders inside the <form>; position has no bearing on form association, so
  * the button still submits.
  */
+import { READABLE, SHELL } from "@/components/ui";
+
 export function StickyActions({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background">
-      <div className="mx-auto w-full max-w-md px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-        {children}
+      <div className={`${SHELL} pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]`}>
+        {/* Same inner cap as the form above it, or the button would drift
+            wider than the fields it submits. */}
+        <div className={READABLE}>{children}</div>
       </div>
     </div>
   );

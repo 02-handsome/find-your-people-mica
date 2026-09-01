@@ -19,7 +19,7 @@ export default function ConnectionsLoading() {
           <SkeletonLine className="h-4 w-full" />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
           {[0, 1].map((i) => (
             <SkeletonCard key={i}>
               <div className="flex items-start justify-between gap-3">

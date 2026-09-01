@@ -25,7 +25,7 @@ export default function MatchesLoading() {
           <SkeletonLine className="h-7 w-24 rounded-full" />
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 xl:grid-cols-3">
           {[0, 1, 2].map((i) => (
             <SkeletonCard key={i}>
               <div className="flex items-start gap-4">

@@ -71,12 +71,20 @@ export function SkeletonCard({ children }: { children: React.ReactNode }) {
 export function SkeletonScreen({
   label,
   children,
+  /**
+   * Column and padding for this screen. Defaults to the in-shell case,
+   * where (complete)/layout supplies the column. A screen outside that
+   * shell has to pass its own, or the skeleton renders edge-to-edge and
+   * then snaps into a column when the real page lands.
+   */
+  className = "py-6",
 }: {
   label: string;
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
-    <main role="status" aria-busy="true" className="py-6">
+    <main role="status" aria-busy="true" className={className}>
       <span className="sr-only">{label}</span>
       {children}
     </main>

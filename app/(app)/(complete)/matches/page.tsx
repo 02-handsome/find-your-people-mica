@@ -83,7 +83,11 @@ export default async function MatchesPage() {
           <p className={`mt-2 ${HINT}`}>{EMPTY_POOL_COPY}</p>
         </section>
       ) : (
-        <ul className="space-y-4">
+        /* Three ranked cards stack on a phone. From md: they sit side by
+           side, which is what AD-30 wanted the day-circle row for — the
+           point of drawing overlap as circles is comparing three at a
+           glance, and that is easier across than down. */
+        <ul className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0 xl:grid-cols-3">
           {matches.map((candidate, index) => (
             <MatchCard
               key={candidate.intent_id}

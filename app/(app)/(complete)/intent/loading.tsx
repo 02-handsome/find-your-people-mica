@@ -1,4 +1,5 @@
 import { FormSkeleton } from "@/components/FormSkeleton";
+import { READABLE } from "@/components/ui";
 
 /**
  * Screen 3 — activity (3 chips), days (7 chips), time window, level (3 chips).
@@ -7,5 +8,11 @@ import { FormSkeleton } from "@/components/FormSkeleton";
  * the nearest loading.tsx up the tree, and the two forms are the same shape.
  */
 export default function IntentLoading() {
-  return <FormSkeleton label="Loading the intent form" chipRows={[3, 7, 3]} />;
+  return (
+    <FormSkeleton
+      label="Loading the intent form"
+      chipRows={[3, 7, 3]}
+      className={`${READABLE} py-6`}
+    />
+  );
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { IncomingRequestCard } from "@/components/IncomingRequestCard";
 import { IntentCard } from "@/components/IntentCard";
 import { LogOutButton } from "@/components/LogOutButton";
-import { BUTTON_PRIMARY_LINK, CARD, HINT, LINK_MUTED } from "@/components/ui";
+import { BUTTON_PRIMARY_LINK, CARD, HINT, LINK_MUTED, READABLE } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { getActiveIntent } from "@/lib/intents-server";
 import { getIncomingRequests } from "@/lib/requests-server";
@@ -58,7 +58,7 @@ export default async function HomePage() {
     : null;
 
   return (
-    <main className="flex flex-col gap-8 py-6">
+    <main className={`${READABLE} flex flex-col gap-8 py-6`}>
       {/* F4.3 — incoming requests. Only rendered when there are any: an empty
           "no requests" panel on every visit would be noise, and this screen
           already has a designed empty state for the thing that matters when

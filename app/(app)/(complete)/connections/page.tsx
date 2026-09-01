@@ -65,7 +65,7 @@ export default async function ConnectionsPage() {
           </Link>
         </section>
       ) : (
-        <ul className="space-y-4">
+        <ul className="space-y-4 md:grid md:grid-cols-2 md:gap-4 md:space-y-0">
           {connections.map((connection) => (
             <ConnectionCard key={connection.request_id} connection={connection} />
           ))}

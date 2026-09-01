@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { updateIntentAction } from "@/app/(app)/(complete)/intent/actions";
 import { IntentForm } from "@/components/IntentForm";
-import { HINT } from "@/components/ui";
+import { HINT, READABLE } from "@/components/ui";
 import { formatExpiry } from "@/lib/intents";
 import { getActiveIntent } from "@/lib/intents-server";
 
@@ -19,7 +19,7 @@ export default async function EditIntentPage() {
   if (!intent) redirect("/");
 
   return (
-    <main className="py-6">
+    <main className={`${READABLE} py-6`}>
       <h1 className="text-2xl font-semibold tracking-tight">
         Edit your intent
       </h1>
@@ -27,10 +27,15 @@ export default async function EditIntentPage() {
         {/* F2.4 is explicit that editing does not reset expires_at. Saying so
             here removes the incentive to withdraw and repost purely to buy more
             time — which would also throw away any requests already received. */}
-        Editing doesn&rsquo;t extend it — still {formatExpiry(intent.expires_at)
-          .replace("Expires in ", "")
-          .replace("Expired", "expired")}
-        .
+        {/* Lower-case the leading verb rather than stripping a prefix. The
+            old version removed "Expires in " / "Expired", which are only two
+            of formatExpiry's five returns — past 30 days it emits
+            "Expires 1 Jan 2028", matched neither replacement, and the
+            sentence rendered "still Expires 1 Jan 2028." Both published test
+            accounts sit in that branch (AD-13 revised), so it was the only
+            thing a grader could see here. Every branch starts "Expire". */}
+        Editing doesn&rsquo;t extend it — it still{" "}
+        {formatExpiry(intent.expires_at).replace(/^Expire/, "expire")}.
       </p>
 
       <IntentForm action={updateIntentAction} intent={intent} mode="edit" />

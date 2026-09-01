@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { createIntentAction } from "@/app/(app)/(complete)/intent/actions";
 import { IntentForm } from "@/components/IntentForm";
-import { HINT } from "@/components/ui";
+import { HINT, READABLE } from "@/components/ui";
 import { INTENT_TTL_DAYS } from "@/lib/intents";
 import { getActiveIntent } from "@/lib/intents-server";
 
@@ -20,7 +20,7 @@ export default async function NewIntentPage() {
   if (await getActiveIntent()) redirect("/");
 
   return (
-    <main className="py-6">
+    <main className={`${READABLE} py-6`}>
       <h1 className="text-2xl font-semibold tracking-tight">
         What are you looking for?
       </h1>

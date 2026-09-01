@@ -80,3 +80,31 @@ export const CHIP =
 /** A text link sized as a real target. 14px text in a 44px hit area. */
 export const LINK_MUTED =
   "inline-block py-3 text-sm font-medium underline text-muted-foreground";
+
+/**
+ * The app shell column, and the one place its width is decided.
+ *
+ * It was previously written out by hand in six places — (complete)/layout,
+ * profile-setup, (auth)/layout, AppBar, BottomNav and StickyActions — every one
+ * of them reading `mx-auto w-full max-w-md px-5`. The chrome has to stay
+ * exactly as wide as the content beneath it or the app bar and the page come
+ * apart, so six independent copies is the "two places that can disagree"
+ * failure this project keeps meeting (AD-5, AD-10, AD-20). One constant now,
+ * consumed everywhere.
+ *
+ * MOBILE IS UNCHANGED, deliberately. Below 768px this resolves to exactly the
+ * class set those sites already had, so every measurement in AD-28, AD-29 and
+ * AD-30 — all taken at 375px — still describes what ships. The scale-up lives
+ * entirely in `md:` and `lg:`.
+ */
+export const SHELL =
+  "mx-auto w-full max-w-md px-5 md:max-w-3xl md:px-8 lg:max-w-5xl xl:max-w-7xl";
+
+/**
+ * A readable cap for one column of prose or form fields inside SHELL.
+ *
+ * Lists want the whole shell and go multi-column inside it; a form does not.
+ * A 1024px-wide stack of 48px inputs is harder to fill in than a 448px one,
+ * and the intent form's seven day chips were sized for a narrow column.
+ */
+export const READABLE = "mx-auto w-full lg:max-w-2xl";

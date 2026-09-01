@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { ProfileSetupForm } from "@/components/ProfileSetupForm";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { HINT } from "@/components/ui";
+import { HINT, READABLE, SHELL } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { isProfileComplete } from "@/lib/profile-options";
 
@@ -44,7 +44,8 @@ export default async function ProfileSetupPage() {
   const editing = isProfileComplete(profile);
 
   return (
-    <main className="mx-auto w-full max-w-md px-5 py-10">
+    <main className={`${SHELL} py-10`}>
+      <div className={READABLE}>
       {/* This screen sits outside the (complete) shell — you pass through it
           once, and navigating away from it would only be bounced back by the
           completeness guard — so it carries its own header rather than the app
@@ -64,6 +65,7 @@ export default async function ProfileSetupPage() {
       </div>
 
       <ProfileSetupForm profile={profile} editing={editing} />
+      </div>
     </main>
   );
 }

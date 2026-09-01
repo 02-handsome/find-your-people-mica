@@ -11,13 +11,16 @@ import { SkeletonChips, SkeletonLine, SkeletonScreen } from "@/components/Skelet
 export function FormSkeleton({
   label,
   chipRows,
+  className,
 }: {
   label: string;
   /** Chip counts, in order, for each picker on the form. */
   chipRows: number[];
+  /** Passed straight to SkeletonScreen — see the note there. */
+  className?: string;
 }) {
   return (
-    <SkeletonScreen label={label}>
+    <SkeletonScreen label={label} className={className}>
       <SkeletonLine className="h-7 w-48" />
       <SkeletonLine className="mt-3 h-4 w-full" />
 

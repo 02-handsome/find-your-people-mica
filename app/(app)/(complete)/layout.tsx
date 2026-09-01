@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 
 import { AppBar } from "@/components/AppBar";
 import { BottomNav } from "@/components/BottomNav";
+import { SHELL } from "@/components/ui";
 import { getProfile } from "@/lib/auth";
 import { isProfileComplete } from "@/lib/profile-options";
 
@@ -30,8 +31,9 @@ export default async function CompleteProfileLayout({
     <div className="min-h-dvh bg-background">
       <AppBar profile={profile!} />
 
-      {/* pt-16 clears the fixed bar, pb-28 clears the fixed nav. */}
-      <div className="mx-auto w-full max-w-md px-5 pt-16 pb-28">{children}</div>
+      {/* pt-16 clears the fixed bar; pb-28 clears the fixed nav. From md:
+          the nav moves into the app bar, so the reservation goes with it. */}
+      <div className={`${SHELL} pt-16 pb-28 md:pb-12`}>{children}</div>
 
       <BottomNav />
     </div>

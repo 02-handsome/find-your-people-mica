@@ -4,6 +4,7 @@ import {
   SkeletonLine,
   SkeletonScreen,
 } from "@/components/Skeleton";
+import { READABLE } from "@/components/ui";
 
 /**
  * Home (screen 4). Mirrors the real order: section heading → intent card →
@@ -14,7 +15,7 @@ import {
  */
 export default function HomeLoading() {
   return (
-    <SkeletonScreen label="Loading your home screen">
+    <SkeletonScreen label="Loading your home screen" className={`${READABLE} py-6`}>
       <div className="flex flex-col gap-8">
         <div>
           <SkeletonLine className="mb-3 h-6 w-44" />
