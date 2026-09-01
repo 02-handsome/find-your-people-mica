@@ -155,6 +155,38 @@ async function main() {
     experience_level: "regular",
   };
 
+  console.log("\n════ users — contact handle format (0006) ════\n");
+
+  // isValidContactHandle() in lib/profile-options.ts rejects all of these, but
+  // that check lives in a Server Action and the publishable key ships in the
+  // browser. 0001 grants UPDATE (..., contact_handle) to `authenticated`, so
+  // without a CHECK constraint a signed-in user PATCHes straight past it.
+  //
+  // These fail until 0006 has been run in the SQL Editor, which is the point:
+  // "did anyone remember to apply the migration" becomes a test result rather
+  // than something to remember.
+  for (const [why, value] of [
+    ["free text", "not-a-phone-number-at-all"],
+    ["too short", "98765"],
+    ["too long", "98765432101"],
+    ["leading 5, not an Indian mobile prefix", "5876543210"],
+    ["wrong country code", "+449876543210"],
+    ["letters mixed in", "98765abcde"],
+    ["empty string", ""],
+  ]) {
+    await mustFail(`A cannot store a malformed contact handle - ${why}`, () =>
+      A.client.from("users").update({ contact_handle: value }).eq("id", A.id).select()
+    );
+  }
+
+  await mustSucceed("A can still store a plain 10-digit handle", () =>
+    A.client.from("users").update({ contact_handle: "9876543210" }).eq("id", A.id).select()
+  );
+
+  await mustSucceed("A can still store one with a +91 prefix", () =>
+    A.client.from("users").update({ contact_handle: "+919876543210" }).eq("id", A.id).select()
+  );
+
   console.log("\n════ intents — inserts ════\n");
 
   await mustSucceed("A can post its own intent", () =>

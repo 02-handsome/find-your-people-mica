@@ -139,6 +139,18 @@ export function ProfileSetupForm({
             inputMode="numeric"
             autoComplete="tel"
             placeholder="10-digit mobile number"
+            // Browser-side hints only. They catch a typo before submit; they
+            // guarantee nothing, because anyone signed in can PATCH the column
+            // directly (AD-5). The Server Action produces the message, and the
+            // 0006 CHECK constraint is the actual guarantee.
+            //
+            // maxLength matches the pattern’s upper bound rather than the 13 of
+            // a bare "+919876543210": someone typing "+91 98765 43210" would
+            // otherwise be cut off mid-number. The separators are admitted here
+            // and stripped by normalizeContactHandle() before storing.
+            maxLength={17}
+            pattern="[+0-9 ()-]{10,17}"
+            title="A 10-digit Indian mobile, optionally with +91"
             className={`${INPUT} pl-11`}
           />
         </div>
