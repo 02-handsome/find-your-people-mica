@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { MatchCard } from "@/components/MatchCard";
 import { CARD, HINT } from "@/components/ui";
+import { getProfile } from "@/lib/auth";
 import { ACTIVITY_LABELS, formatTimeRange } from "@/lib/intents";
 import { getActiveIntent } from "@/lib/intents-server";
 import { EMPTY_POOL_COPY } from "@/lib/matches";
@@ -13,7 +14,10 @@ export const metadata: Metadata = { title: "Matches · Find Your People" };
 
 /** Screen 5 (PRD section 7) — up to three ranked candidates. */
 export default async function MatchesPage() {
-  const intent = await getActiveIntent();
+  // getProfile() is cache()d and the (complete) layout has already asked for
+  // it this request, so this is a memoised hit — no second query, and no new
+  // failure mode: the layout would have thrown first if the read failed.
+  const [intent, profile] = await Promise.all([getActiveIntent(), getProfile()]);
 
   // Matching is relative to your own intent, so there is nothing to show
   // without one. Home already owns the designed "Post an intent" state — one
@@ -93,6 +97,7 @@ export default async function MatchesPage() {
               key={candidate.intent_id}
               candidate={candidate}
               viewer={viewer}
+              viewerTags={profile?.tags ?? null}
               // F3.3 hands these back already sorted, so the first row is the
               // top-ranked one.
               highlight={index === 0}

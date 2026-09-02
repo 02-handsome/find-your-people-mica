@@ -77,6 +77,22 @@ export const CHIP =
   "inline-flex items-center rounded-full bg-secondary px-3 py-1 text-xs " +
   "font-medium text-secondary-foreground";
 
+/**
+ * The same chip for a tag the viewer ALSO picked. See lib/overlap.ts.
+ *
+ * THREE cues, not one. Colour carries it at a glance, but WCAG 1.4.1 is that
+ * colour must never be the only visual difference — so the shared chip is also
+ * a heavier weight and leads with a check mark. A red/grey pair is exactly the
+ * distinction a red-blind reader loses, and this app's accent is red.
+ *
+ * A 10% accent wash rather than a solid fill: three solid accent pills would
+ * out-shout the Connect button, which is the only thing on the card that
+ * should read as an action.
+ */
+export const CHIP_SHARED =
+  "inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 " +
+  "text-xs font-semibold text-primary";
+
 /** A text link sized as a real target. 14px text in a 44px hit area. */
 export const LINK_MUTED =
   "inline-block py-3 text-sm font-medium underline text-muted-foreground";

@@ -97,6 +97,9 @@ export default async function HomePage() {
                 key={request.request_id}
                 request={request}
                 viewer={viewer}
+                // From `users`, not from the intent — so this is still passed
+                // when `viewer` above is null. See lib/overlap.ts.
+                viewerTags={profile.tags}
               />
             ))}
           </ul>

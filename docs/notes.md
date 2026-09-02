@@ -1955,6 +1955,87 @@ written. Rewriting them would falsify the log rather than update it.
 
 ---
 
+## AD-32 — Shared interests: the one ranking term the cards never admitted to using.
+
+The match card drew **two** of F3's four scoring terms as mutual facts — the
+"You both train" row for `time_overlap_minutes`, and the filled circles for
+`shared_days`. The third, `overlapping_tags × 2`, was drawn as a flat grey list
+of facts about a stranger. Nothing said which of them counted.
+
+That is backwards, and `lib/profile-options.ts` had already said why in a
+comment written back in Phase 2: `activity` is a hard filter (F3.1) and the
+time window is a hard filter (F3.2), so **every candidate you are shown already
+shares your activity and your hours**. The day circles across three cards look
+near-identical for exactly that reason. Tags are the term that actually
+separates them — "what separates two equally available gym partners", in that
+file's own words — and they were the one signal the UI declined to surface.
+
+Marked on the match card and the incoming-request card. **Not** on the
+connections card: there the decision is already made and you have their number,
+so a "you both like Coffee" badge is decoration, and it would put accent colour
+on a card whose one accent job is the revealed handle.
+
+**This is not a reversal of AD-9.** AD-9 objected to tags *filtering*, and they
+still do not — `get_matches()` is untouched, no SQL changed, and the profile
+form still says "These don't decide who you match with — your activity and
+times do. They set the order." A shared tag is reported after the fact, as a
+reason someone sorted where they did. That is the same move AD-19 allowed for
+the reason line: surface the ranking's inputs, never print the score.
+
+### Three cues, because one of them is red
+
+The shared chip is accent-on-accent-wash, **semibold rather than medium, and
+led by a check mark**. WCAG 1.4.1 is that colour must not be the only visual
+difference, and a red/grey pair is precisely the distinction a red-blind reader
+loses — on a palette whose accent is red. Measured, transitions suppressed
+first (AD-29's lesson), with the composited background read back off a canvas:
+
+| | text | composited bg | ratio |
+| --- | --- | --- | --- |
+| Shared, light | `#af101a` | `#f7e7e8` | **6.03:1** |
+| Shared, dark | `#ffb3ac` | `#443e3d` | **6.14:1** |
+| Plain, light | `#616161` | `#eeeeee` | 5.34:1 |
+| Plain, dark | `#c6c6c9` | `#454747` | 5.49:1 |
+
+Worst case at 375px — three shared chips carrying the three longest tag names
+(`Consulting`, `Badminton`, `Marketing`), all with check icons — is 102.6px at
+its widest and still fits on **one** row inside a 335px card.
+
+### The measurement harness lied first, again
+
+The first contrast run reported 8.21:1 for the shared chip in dark. It was
+wrong, and the tell was that it disagreed with the arithmetic. Tailwind 4 emits
+`bg-primary/10` as **`oklab(0.836787 0.0815305 0.0380711 / 0.1)`**, and a regex
+that scrapes the first numbers out of a colour string reads those channels as
+`rgb(0.84, 0.08, 0.04)` — near-black — and composites a background far darker
+than the real one. Fixed by refusing to parse colours at all: paint the layers
+onto a canvas, let the browser do the conversion, read the pixel back. That is
+the third time in this project a measurement has been wrong in a way that
+looked like a finding (AD-29's mid-transition `getComputedStyle`, AD-30's
+uncontained `position: fixed`). **The rule that keeps catching them is: if the
+measurement and the arithmetic disagree, suspect the measurement.**
+
+### The bug this design avoided
+
+The obvious implementation is to widen `ViewerWindow` with a `tags` field —
+one object describing the viewer, passed to the cards that already take it.
+That is wrong, and the type comment now says so. `ViewerWindow` is built from
+`intents` and is **null for someone who has withdrawn theirs**; tags come from
+`users` and are always there. Merged, shared interests would have stopped being
+marked on incoming requests in exactly the state where the recipient has no
+live intent — a state they can still receive and answer requests in, and the
+one where the extra signal is worth the most.
+
+Verified rather than reasoned about: withdrawing test.two's intent leaves the
+overlap line correctly absent and the shared tags still marked.
+
+Presentation only, as with AD-28, AD-30 and AD-31. No SQL, no RLS, no schema,
+no Server Component boundary moved. The matches page gained a `getProfile()`
+call, which costs nothing — it is `cache()`d and the `(complete)` layout has
+already awaited it on the same request.
+
+---
+
 # Open questions
 
 Decisions deliberately deferred, recorded so the phase that owns them decides

@@ -8,7 +8,8 @@ import { respondToRequestAction } from "@/app/(app)/(complete)/requests/actions"
 import { Avatar } from "@/components/Avatar";
 import { FormError } from "@/components/FormError";
 import { OverlapLine } from "@/components/OverlapLine";
-import { BUTTON_NEUTRAL, BUTTON_PRIMARY, CHIP, HINT } from "@/components/ui";
+import { TagRow } from "@/components/TagRow";
+import { BUTTON_NEUTRAL, BUTTON_PRIMARY, HINT } from "@/components/ui";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ViewerWindow } from "@/lib/overlap";
 import { ACTIVITY_LABELS, EXPERIENCE_LABELS, formatTimeRange } from "@/lib/intents";
@@ -68,6 +69,7 @@ function DecisionButton({
 export function IncomingRequestCard({
   request,
   viewer,
+  viewerTags,
 }: {
   request: IncomingRequest;
   /**
@@ -75,6 +77,11 @@ export function IncomingRequestCard({
    * "both of you" left to describe and the reason line is simply not drawn.
    */
   viewer: ViewerWindow | null;
+  /**
+   * The recipient's own profile tags, which survive withdrawing an intent —
+   * so shared interests are still marked on a card whose overlap line is not.
+   */
+  viewerTags: string[] | null;
 }) {
   const [state, formAction] = useActionState(respondToRequestAction, {
     error: null,
@@ -106,15 +113,15 @@ export function IncomingRequestCard({
             timeEnd={request.time_end}
           />
 
-          {request.tags && request.tags.length > 0 ? (
-            <div className="mt-3 flex flex-wrap gap-2">
-              {request.tags.map((tag) => (
-                <span key={tag} className={CHIP}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-          ) : null}
+          {/* Shared interests are marked here too. This is a decision screen —
+              the one place in the app where accepting is irreversible — so a
+              signal that says "we have something in common beyond the hour we
+              both picked" is worth more here than anywhere else. */}
+          <TagRow
+            className="mt-3"
+            viewerTags={viewerTags}
+            tags={request.tags}
+          />
 
           {/* F4.3: "intent details" — what they are actually proposing. */}
           <p className={`mt-3 ${HINT}`}>

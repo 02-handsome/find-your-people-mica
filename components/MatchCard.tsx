@@ -3,7 +3,8 @@ import { Gauge } from "lucide-react";
 import { Avatar } from "@/components/Avatar";
 import { ConnectButton } from "@/components/ConnectButton";
 import { DayCircles } from "@/components/DayCircles";
-import { CARD, CHIP, HINT } from "@/components/ui";
+import { TagRow } from "@/components/TagRow";
+import { CARD, HINT } from "@/components/ui";
 import {
   EXPERIENCE_LABELS,
   formatTimeRange,
@@ -40,10 +41,16 @@ import type { ViewerWindow } from "@/lib/overlap";
 export function MatchCard({
   candidate,
   viewer,
+  viewerTags,
   highlight = false,
 }: {
   candidate: MatchCandidate;
   viewer: ViewerWindow;
+  /**
+   * The viewer's own profile tags. Separate from `viewer` on purpose: that is
+   * the intent they posted, these are from `users`. See lib/overlap.ts.
+   */
+  viewerTags: string[] | null;
   /** F3.3 returns a ranked list; this marks the top one. */
   highlight?: boolean;
 }) {
@@ -97,15 +104,11 @@ export function MatchCard({
           </span>
         </div>
 
-        {candidate.tags && candidate.tags.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {candidate.tags.map((tag) => (
-              <span key={tag} className={CHIP}>
-                {tag}
-              </span>
-            ))}
-          </div>
-        ) : null}
+        {/* Shared interests are marked here rather than left as a flat list.
+            This is the screen where it matters most: F3.1 and F3.2 already
+            hard-filtered on activity and hours, so all three candidates share
+            those — tags are the term that actually separates them. */}
+        <TagRow className="mt-3" viewerTags={viewerTags} tags={candidate.tags} />
 
         <hr className="my-4 border-border" />
 
